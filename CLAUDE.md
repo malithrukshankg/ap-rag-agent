@@ -16,7 +16,8 @@ A take-home assessment: build a small, production-minded accounts-payable agent.
 - Consequential tools must be deny-by-default, approval-gated and idempotent (§4). `submit_finance_decision` requires approval, validated arguments and an idempotency key (§3).
 - When the recommended outcome is a payment posting, create an approval request and stop. Continue only after an explicit approval or rejection (§2.5). See Resolved ambiguities #1 for what counts as consequential: holds and rejections are recorded without approval.
 - Idempotency: a duplicate approval must produce one effective finance decision and a stable, replay-safe response (§4, §5 FIN-005).
-- Persist enough run state and audit events to explain, reproduce and safely resume. Restart/resume must work (§2.6, §4, §8). What "reproduce" means is undecided: see Open question #10 before implementing it.
+- Persist enough run state and audit events to explain, reproduce and safely resume. Restart/resume must work (§2.6, §4, §8). What "reproduce" means is settled: see Resolved ambiguities #10.
+- Every tool response, the redacted evidence block as passed to the model, and every model completion are persisted per step, so a run can be replayed without calling the model or any tool (§2.6; see Resolved ambiguities #10). The persisted evidence block is the redacted one. Unredacted payment details are never written to any store (§4; Resolved ambiguities #3).
 - Handle at least: tool timeout, transient tool failure, malformed model output, duplicate approval request, application restart/resume (§4).
 - Log run, retrieval and tool events with timestamps, correlation/run ID, outcome and duration (§4).
 - Safe logging: do not log credentials, bank details or unnecessary financial data (§4). Never commit API keys, credentials, personal data or proprietary code (§7, §6).
@@ -53,6 +54,7 @@ A take-home assessment: build a small, production-minded accounts-payable agent.
    - the submitted `decision_fingerprint` matches the pending one.
 
    A failed check writes an audit event, leaves the run pending, and returns the reason. **Limitation:** authentication is out of scope. The caller asserts identity and it is trusted.
+   **Approval expiry:** we checked FIN-POL-007 and FIN-POL-010 and found no rule that approvals lapse or expire, so there is no expiry check. Two nearby rules are not approval expiry: FIN-POL-007 §4 escalates *held* cases after ten business days, and FIN-POL-007 §5 revalidates time-sensitive vendor/delegation information on resumption.
 7. **No tool supplies an exchange rate** (§2.1, §3). §2.1 accepts a currency, and the corpus has a foreign-currency policy, but none of the five §3 tools returns a rate. So a USD invoice cannot be reconciled against an AUD PO.
    Decision: add a sixth read-only tool, `get_fx_rate`, backed by a fixture (§3 permits more tools). The rate, its source and its as-at date are recorded in the ControlResult inputs.
 8. **Tolerance precedence** (§3, §2.3). `get_purchase_order` returns tolerances (§3), and the corpus also defines tolerances by policy.
@@ -60,10 +62,18 @@ A take-home assessment: build a small, production-minded accounts-payable agent.
 9. **"Confidence" is undefined** (§2.4).
    Decision: confidence is composed in code from control statuses and citation coverage. A model-emitted confidence number never reaches the final result.
 
+10. **"Reproduce" is stronger than explain or resume** (§2.6). Faithful replay requires persisting model outputs, retrieval results and tool responses. Without them, re-running a non-deterministic model produces a different run.
+    Decision: for each step, the run persists every tool response, the evidence block exactly as passed to the model, and the model's completion. Replay re-executes the orchestration by feeding the stored responses back instead of calling the model or the tools again. This reproduces a run's control flow, controls, routing and final decision deterministically.
+    - **What replay proves:** the orchestration is reproducible. It does not prove model behaviour. Changing a prompt invalidates the stored responses for that step, because they no longer match what the prompt would now produce.
+    - **Tension with #3, resolved by construction:** the persisted evidence block is the redacted one, because redaction happens before the prompt is built. There is nothing extra to strip at write time, and unredacted payment details are never persisted.
+    - **Retention:**
+      - Run, decision, approval and exception records are retained for seven years after the end of the relevant financial year (FIN-POL-010 §1).
+      - FIN-POL-010 §1 states that "temporary model prompts, retrieval caches and debug logs are not the system of record" and gives them no period. FIN-POL-010 §2 limits prompts and logs to "only the data necessary for the task".
+      - Documented default: replay captures are kept with their run in this local build, with no automatic deletion. They are treated as derived data, not the system of record.
+    - **Scale limitation:** at production volume, capture would be tiered: full capture for exceptional runs, sampling for clean ones, and prompt bodies moved to object storage under a lifecycle policy. With five fixture cases, full capture costs almost nothing, so we capture everything.
+
 ## Open questions
-10. **"Reproduce" (§2.6) is stronger than explain or resume.** Faithful replay requires persisting model outputs, retrieval results and tool responses. Without them, re-running a non-deterministic model produces a different run. **Undecided.** Options:
-    - (a) Record responses and support true replay. This costs storage and interacts with the redaction rule in item 3: what is stored must be redacted, yet replay needs it.
-    - (b) Claim only determinism given fixed inputs, and say so explicitly. This is cheap but delivers a weaker reading of "reproduce".
+None outstanding.
 
 ## Required deliverables
 - [ ] Runnable source code plus complete instructions to provision/configure, ingest documents, start the app and run the tests (§7)
