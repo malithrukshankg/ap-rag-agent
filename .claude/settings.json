@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/STUFF/JOB_PREP/Monash/finance_rag_corpus/**)"
+    ]
+  }
+}
