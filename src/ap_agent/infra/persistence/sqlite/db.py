@@ -8,13 +8,13 @@ callers can never interleave a read-then-write on the same row (the FIN-005 race
 import json
 import sqlite3
 import threading
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-Params = Sequence[Any]
+Params = Sequence[Any] | Mapping[str, Any]  # positional (?) or named (:name)
 
 
 def dumps(value: Any) -> str:
