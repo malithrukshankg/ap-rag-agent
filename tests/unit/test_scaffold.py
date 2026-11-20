@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
 from ap_agent.cli import main
@@ -51,5 +52,16 @@ def test_escalation_precedence_starts_with_fraud() -> None:  # O5
     assert first["target"] == "Financial Crime and Controls"
 
 
-def test_cli_ingest_stub_exits_nonzero() -> None:
-    assert main(["ingest"]) == 2
+def test_cli_ingest_indexes_then_skips(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.chdir(ROOT)
+    monkeypatch.setenv("AP_STORAGE__SQLITE_PATH", str(tmp_path / "ap.db"))
+    assert main(["ingest"]) == 0
+    assert '"skipped": false' in capsys.readouterr().out
+    assert main(["ingest"]) == 0
+    assert '"skipped": true' in capsys.readouterr().out
+
+
+def test_cli_ingest_bad_config_exits_1(tmp_path: Path) -> None:
+    assert main(["ingest", "--config", str(tmp_path / "missing.yaml")]) == 1
