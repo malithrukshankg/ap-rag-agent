@@ -10,7 +10,7 @@ APP_YAML = ROOT / "config" / "app.yaml"
 
 def test_loads_app_yaml() -> None:
     s = load_settings(APP_YAML)
-    assert s.model.adapter == "scripted"
+    assert s.model.adapter == "anthropic"  # live mode is the configured default
     assert s.budget.max_tool_calls == 25
     assert s.tools.get_purchase_order.max_retries == 3
     assert s.escalation_precedence[0].target == "Financial Crime and Controls"

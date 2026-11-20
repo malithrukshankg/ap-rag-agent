@@ -9,7 +9,7 @@ import pytest
 from ap_agent.decision.submit import SubmitFinanceDecisionTool, SubmitRefused, SubmitRequest
 from ap_agent.infra.observability.logger import RunEventLogger
 from ap_agent.infra.persistence.records import RunRecord
-from ap_agent.infra.settings import BudgetSettings, Settings
+from ap_agent.infra.settings import BudgetSettings, ConfigError, Settings
 from ap_agent.kernel.enums import ApprovalVerdict, DecisionCode, RunStatus
 from ap_agent.orchestration.runtime import Orchestrator
 from tests.conftest import ROOT
@@ -214,3 +214,16 @@ def test_canary_no_full_account_number_anywhere(
     # The scan includes model_calls.prompt_redacted, tool_calls, audit_events and checkpoints.
     log_text = settings.logging.path.read_text("utf-8")
     assert log_text and all(secret not in log_text for secret in secrets)
+
+
+def test_live_mode_without_a_key_fails_fast(
+    make_orchestrator: OrchestratorFactory, settings: Settings
+) -> None:
+    live = settings.model_copy(
+        update={
+            "model": settings.model.model_copy(update={"adapter": "anthropic"}),
+            "anthropic_api_key": None,
+        }
+    )
+    with pytest.raises(ConfigError, match="ANTHROPIC_API_KEY"):
+        make_orchestrator(live)

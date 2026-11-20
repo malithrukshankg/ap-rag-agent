@@ -93,6 +93,13 @@ class Orchestrator:
     ) -> None:
         if settings.payment_hmac_key is None or not settings.payment_hmac_key.get_secret_value():
             raise ConfigError("AP_PAYMENT_HMAC_KEY must be set")
+        if settings.model.adapter == "anthropic" and (
+            settings.anthropic_api_key is None or not settings.anthropic_api_key.get_secret_value()
+        ):
+            raise ConfigError(
+                "ANTHROPIC_API_KEY must be set when model.adapter is 'anthropic'; "
+                "set AP_MODEL__ADAPTER=scripted to run without a model"
+            )
         self.settings = settings
         self.params = params
         self._clock, self._sleep, self._after_ledger = clock, sleep, after_ledger

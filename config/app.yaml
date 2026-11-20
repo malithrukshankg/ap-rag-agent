@@ -2,7 +2,10 @@
 # Secrets never live here: ANTHROPIC_API_KEY and AP_PAYMENT_HMAC_KEY come from the environment.
 
 model:
-  adapter: scripted            # scripted (stable tier, no key) | anthropic (live tier)
+  # anthropic: real Claude, needs ANTHROPIC_API_KEY (default).
+  # scripted: canned completions, no key, no network. Run without a key with
+  #   AP_MODEL__ADAPTER=scripted. The stable test tier always forces scripted.
+  adapter: anthropic
   id: claude-opus-5-5
   effort: medium               # output_config.effort; set explicitly (Opus 5.5 default is medium)
   max_tokens: 16000            # non-streaming request ceiling
