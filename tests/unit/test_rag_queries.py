@@ -28,14 +28,14 @@ def _labels(case: CaseRequest) -> list[str]:
     return [q.label for q in plan_queries(facets, case)]
 
 
-def test_nine_templates() -> None:
+def test_eleven_templates() -> None:
     assert [t.label for t in TEMPLATES] == [
-        "C1", "C2", "C3", "C4", "C4-NOPO", "C4-FX", "C5", "C6", "CASE",
+        "C1", "C2", "C3", "C3-STATUS", "C4", "C4-NOPO", "C4-FX", "C5", "C5-LIMITS", "C6", "CASE",
     ]  # fmt: skip
 
 
 def test_plain_aud_po_case_runs_always_on_arms_only() -> None:
-    assert _labels(_case()) == ["C1", "C2", "C3", "C4", "C5"]
+    assert _labels(_case()) == ["C1", "C2", "C3", "C3-STATUS", "C4", "C5", "C5-LIMITS"]
 
 
 def test_no_po_swaps_c4_for_nopo() -> None:
@@ -53,11 +53,11 @@ def test_free_text_adds_c6_and_case_arm() -> None:
     assert labels[-2:] == ["C6", "CASE"]
 
 
-def test_at_most_eight_queries_per_run() -> None:
+def test_at_most_ten_queries_per_run() -> None:
     worst = _case(currency="USD", notes="urgent bank change", po_ref=None)
-    assert len(_labels(worst)) <= 8
+    assert len(_labels(worst)) <= 10
     worst_po = _case(currency="USD", notes="urgent bank change")
-    assert len(_labels(worst_po)) == 8
+    assert len(_labels(worst_po)) == 10
 
 
 def test_case_arm_skipped_when_free_text_has_no_usable_terms() -> None:

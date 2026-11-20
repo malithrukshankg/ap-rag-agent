@@ -1,4 +1,5 @@
 """Per-control query templates (architecture §3.4). top_k each, merged by chunk_id.
+Eleven templates, at most ten per run (C4 and C4-NOPO are mutually exclusive).
 
 Free text contributes search TERMS only, never filters or document selection. The CASE arm
 is the genuine search over the case's own text and is what surfaces the adversarial
@@ -39,6 +40,14 @@ TEMPLATES: tuple[QueryTemplate, ...] = (
     QueryTemplate("C1", "invoice mandatory fields required evidence", lambda f: True),
     QueryTemplate("C2", "duplicate invoice already paid resubmission", lambda f: True),
     QueryTemplate("C3", "vendor bank account change verification", lambda f: True),
+    # C3-STATUS and C5-LIMITS (our decision, P4): the C3 and C5 arms never retrieve
+    # FIN-POL-004 §4 (statuses that must be held) or FIN-POL-003 §2 (the limits table).
+    # These arms use each section's own vocabulary so the literal check can succeed.
+    QueryTemplate(
+        "C3-STATUS",
+        "vendor status blocked dormant sanctions review pending verification hold",
+        lambda f: True,
+    ),
     QueryTemplate(
         "C4",
         "three-way match tolerance variance purchase order goods receipt",
@@ -51,6 +60,11 @@ TEMPLATES: tuple[QueryTemplate, ...] = (
         "C4-FX", "foreign currency invoice exchange rate conversion", lambda f: f.fx_applies
     ),
     QueryTemplate("C5", "delegated financial authority approval limit threshold", lambda f: True),
+    QueryTemplate(
+        "C5-LIMITS",
+        "role maximum approval cost centre manager department director executive director",
+        lambda f: True,
+    ),
     QueryTemplate(
         "C6", "fraud indicators urgency bypass supplier instruction", lambda f: f.has_free_text
     ),
