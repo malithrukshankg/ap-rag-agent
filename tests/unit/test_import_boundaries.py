@@ -33,7 +33,8 @@ ALLOWED: dict[str, set[str]] = {
         "decision",
         "infra",
     },
-    "api": {
+    # services: use cases shared by every delivery layer; may use everything below it.
+    "services": {
         "kernel",
         "intake",
         "evidence",
@@ -43,7 +44,10 @@ ALLOWED: dict[str, set[str]] = {
         "infra",
         "orchestration",
     },
-    "cli": {"kernel", "evidence", "infra", "orchestration"},
+    # api: router + controller only. Request schemas use kernel/intake types; everything
+    # else goes through services (no Orchestrator, storage or settings access).
+    "api": {"kernel", "intake", "services"},
+    "cli": {"kernel", "evidence", "infra", "orchestration", "services"},
 }
 
 FORBIDDEN_EXTERNAL = {"anthropic", "yaml", "dotenv"}
@@ -84,7 +88,7 @@ def test_layering(path: Path) -> None:
         if target.split(".")[0] == pkg:
             continue
         assert _allowed(target, ALLOWED[pkg]), f"{pkg} must not import {target}"
-        if pkg not in {"orchestration", "api", "cli"}:
+        if pkg not in {"orchestration", "services", "cli"}:
             assert not target.startswith(CONCRETE_STORES), f"{pkg} imports a concrete store"
 
 
