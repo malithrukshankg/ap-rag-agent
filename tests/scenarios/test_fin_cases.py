@@ -154,3 +154,4 @@ def test_second_run_of_same_case_cannot_double_post(make_orchestrator: Orchestra
     assert reply.response is not None and reply.response["idempotency_key"] == key
     assert o.store.ledger.count_for_key(key) == 1
     assert len(o.store.decisions.list_for_case("FIN-005")) == 1
+    assert o.get_run(second.run_id).status is RunStatus.COMPLETED  # not stuck awaiting

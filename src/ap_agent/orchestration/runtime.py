@@ -306,15 +306,22 @@ class Orchestrator:
                 str(run.request_redacted["vendor_id"]),
                 VERDICT_DECISIONS[approval.verdict],
             )
-            decision = self.store.decisions.get_by_key(key)
-            if decision is None:  # first delivery, or a crash between ledger and decision
+            # Resume whenever this run has not finished: first delivery, a crash between
+            # ledger and decision, or a decision already recorded for the same case by an
+            # earlier run (submit then replays it and this run still completes).
+            if run.status is RunStatus.AWAITING_APPROVAL:
                 self._resume(run_id, approval, events)
-                decision = self.store.decisions.get_by_key(key)
+            decision = self.store.decisions.get_by_key(key)
             if decision is None:
                 return ApprovalReply(run_id=run_id, accepted=True, reason="decision pending")
-            response = self._render(approval, decision)
-            self.store.approvals.set_stored_response(approval.approval_id, response)
-            return ApprovalReply(run_id=run_id, accepted=True, response=response)
+            self.store.approvals.set_stored_response(
+                approval.approval_id, self._render(approval, decision)
+            )
+            # Return the persisted copy, not the freshly built dict: every delivery, first or
+            # replayed, then serialises from the same stored JSON and is byte-identical.
+            stored = self.store.approvals.get(run_id, approval.decision_fingerprint)
+            assert stored is not None and stored.stored_response is not None
+            return ApprovalReply(run_id=run_id, accepted=True, response=stored.stored_response)
 
     def _resume(self, run_id: str, approval: ApprovalRecord, events: RunEventLogger) -> None:
         run = self.store.runs.get(run_id)
