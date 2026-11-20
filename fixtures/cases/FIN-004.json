@@ -18,6 +18,20 @@
   "faults": {
     "get_purchase_order": ["timeout", "timeout", "timeout", "timeout"]
   },
+  "scripted_model": [
+    "{\"findings\": [{\"finding_ref\": \"C4\", \"text\": \"PO unavailable\"",
+    {
+      "findings": [
+        {"finding_ref": "C4", "agrees_with_control": true,
+         "text": "The purchase order could not be retrieved and no goods receipt is available, so the match cannot be performed.",
+         "citations": [{"chunk_id": "FIN-POL-001§5@v3.2", "quote": "Missing evidence results in a hold, not a guessed conclusion.", "use": "authority"}]}
+      ],
+      "inferences": [],
+      "unknowns": ["Purchase order PO-4004 contents", "Whether the goods were received"],
+      "risk_indicators": [],
+      "proposed_outcome": "HOLD_FOR_INFORMATION"
+    }
+  ],
   "expected": {
     "recommendation": "HOLD_FOR_INFORMATION",
     "approval_requested": false,

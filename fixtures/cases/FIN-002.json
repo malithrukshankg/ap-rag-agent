@@ -16,6 +16,19 @@
     ]
   },
   "faults": {},
+  "scripted_model": [
+    {
+      "findings": [
+        {"finding_ref": "C2", "agrees_with_control": true,
+         "text": "The invoice number, vendor, currency and gross amount match a record that has already been paid.",
+         "citations": [{"chunk_id": "FIN-POL-005§2@v2.8", "quote": "An exact match to a paid or posted invoice results in `REJECT_DUPLICATE`", "use": "authority"}]}
+      ],
+      "inferences": ["This appears to be a resubmission of an invoice that was already paid."],
+      "unknowns": [],
+      "risk_indicators": [],
+      "proposed_outcome": "HOLD_FOR_INFORMATION"
+    }
+  ],
   "expected": {
     "recommendation": "REJECT_DUPLICATE",
     "approval_requested": false,

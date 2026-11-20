@@ -1,7 +1,8 @@
-"""Case fixtures FIN-001…005 (brief §5): the request, a fault profile and the expected outcome.
-Scripted model completions are added in P5."""
+"""Case fixtures FIN-001…005 (brief §5): the request, a fault profile, the expected outcome
+and the scripted model completions for the stable tier."""
 
 from pathlib import Path
+from typing import Any
 
 from pydantic import Field
 
@@ -23,6 +24,9 @@ class CaseFixture(Strict):
     case: CaseRequest
     faults: FaultProfile = Field(default_factory=dict)
     expected: ExpectedOutcome
+    # Completions for the scripted adapter, in order. A dict is sent as JSON; a string is
+    # sent verbatim (so a fixture can script malformed output first).
+    scripted_model: list[str | dict[str, Any]] = Field(default_factory=list)
 
 
 def load_case(path: Path) -> CaseFixture:

@@ -16,6 +16,22 @@
     ]
   },
   "faults": {},
+  "scripted_model": [
+    {
+      "findings": [
+        {"finding_ref": "C4", "agrees_with_control": true,
+         "text": "The invoice line matches PO-1005 and the recorded goods receipt.",
+         "citations": [{"chunk_id": "FIN-POL-002§2@v2.4", "quote": "AUD 50 absolute variance", "use": "authority"}]},
+        {"finding_ref": "C5", "agrees_with_control": true,
+         "text": "The total is within a Cost Centre Manager's delegated limit.",
+         "citations": [{"chunk_id": "FIN-POL-003§2@v4.0", "quote": "Cost Centre Manager | AUD 10,000", "use": "authority"}]}
+      ],
+      "inferences": [],
+      "unknowns": [],
+      "risk_indicators": [],
+      "proposed_outcome": "APPROVE_FOR_POSTING"
+    }
+  ],
   "expected": {
     "recommendation": "APPROVE_FOR_POSTING",
     "approval_requested": true,
