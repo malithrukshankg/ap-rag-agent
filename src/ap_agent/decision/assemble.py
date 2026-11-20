@@ -151,6 +151,11 @@ def _reasons(results: Sequence[ControlResult], aggregate: Aggregate) -> list[str
     ]
     if aggregate.model_raised_outcome:
         out.append(f"model assessment raised the outcome to {aggregate.outcome.value}")
+    if aggregate.model_escalation_ungrounded:
+        out.append(
+            "model proposed ESCALATE_CONTROL_REVIEW without a verified risk indicator; "
+            "treated as HOLD_FOR_INFORMATION (O8)"
+        )
     return out
 
 

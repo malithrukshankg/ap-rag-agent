@@ -46,6 +46,13 @@ Reply with ONE JSON object and nothing else, with exactly these fields:
                       "ESCALATE_CONTROL_REVIEW"
 }
 
+proposed_outcome is advisory. Code already applies every control's outcome, including ones
+not listed in proposed_outcome (such as REJECT_DUPLICATE), so you never need to pick a
+stricter option to "cover" a failing control. Propose ESCALATE_CONTROL_REVIEW only for a
+risk the controls did not catch, backed by at least one risk_indicator; without one it is
+treated as HOLD_FOR_INFORMATION. Otherwise propose the outcome you agree with:
+APPROVE_FOR_POSTING if every control passed, else HOLD_FOR_INFORMATION.
+
 Citation rules:
 - chunk_id must be one of the source ids shown. quote must be copied verbatim from that
   source, at most 400 characters.

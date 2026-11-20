@@ -404,7 +404,7 @@ Applicability is a deterministic field check, never a classification. Every cont
 
 Order: `ESCALATE_CONTROL_REVIEW > REJECT_DUPLICATE > REJECT_INVALID > HOLD_FOR_INFORMATION > APPROVE_FOR_POSTING`.
 
-- Outcome = highest floor across all controls **and** the model's proposal. The proposal is first capped at `HOLD_FOR_INFORMATION` / `ESCALATE_CONTROL_REVIEW` (O4).
+- Outcome = highest floor across all controls **and** the model's proposal. The proposal is first capped at `HOLD_FOR_INFORMATION` / `ESCALATE_CONTROL_REVIEW` (O4), and a proposed `ESCALATE_CONTROL_REVIEW` with no verified risk indicator is downgraded to `HOLD_FOR_INFORMATION` (O8).
 - Primary `exception_category` and `escalation_target` come from `escalation_precedence` in config (O5).
 - `APPROVE_FOR_POSTING` only if every applicable control is `PASS`.
 - Any `INDETERMINATE` → at least `HOLD_FOR_INFORMATION`.
@@ -766,3 +766,4 @@ FIN-005 is a genuinely concurrent double callback via httpx: one decision, ident
 | O5 | One primary `exception_category` and `escalation_target` when controls tie at the top floor | Fixed precedence, first match wins: C6 suspected fraud (Financial Crime and Controls) > BANK_CHANGE > AUTHORITY_GAP > DUPLICATE_RISK > VENDOR_BLOCK > PO/receipt categories > TAX_QUERY > OTHER_CONTROL_RISK. All other exceptions are still listed. | `config/app.yaml` `escalation_precedence` |
 | O6 | "Repair retry … max 2 attempts" | 2 repair attempts after the initial call (at most 3 model calls per assessment) | `config/app.yaml` `model_repair.max_repair_attempts` |
 | O7 | A crashed run that wasn't paused | On startup, stale `RUNNING` rows become `FAILED` (reason `interrupted`) with an audit event. The caller re-POSTs the case and gets a new run_id. The case-scoped idempotency key prevents a second decision. | startup hook (P6) |
+| O8 | Model `ESCALATE` with no grounds (found in a live eval, 2026-11-20: on FIN-002 the model agreed with every control and raised no indicator, but proposed `ESCALATE_CONTROL_REVIEW` as "the most restrictive available option", overriding C2's `REJECT_DUPLICATE`) | A model `ESCALATE` proposal stands only with at least one risk indicator that passed TB3 verification (cited from this case's own text). Otherwise it counts as `HOLD_FOR_INFORMATION` and the result records why. The model can still only make the outcome stricter, never looser, and now only with cited grounds. Disputes are not grounds: TB3 already moves them to unknowns. The prompt (`assess-v2`) explains that code applies the control results itself. | `controls/aggregate.py`, `assessment/prompt.py` |

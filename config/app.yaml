@@ -10,7 +10,7 @@ model:
   effort: medium               # output_config.effort; set explicitly (Opus 5.5 default is medium)
   max_tokens: 16000            # non-streaming request ceiling
   timeout_s: 120
-  prompt_version: assess-v1    # recorded on every run (config snapshot)
+  prompt_version: assess-v2    # recorded on every run (config snapshot); v2: O8 escalation guidance
 
 # §4 bounded graph. Charged on every node transition and every tool/model attempt.
 # max_tool_calls is 25, not 15: up to 10 retrieval queries + 4 evidence tools + FIN-004's 3

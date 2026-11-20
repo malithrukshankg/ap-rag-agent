@@ -371,7 +371,10 @@ class StartNodes(Base):
             else RecommendationCode.HOLD_FOR_INFORMATION  # UNAVAILABLE raises the floor
         )
         agg = aggregate(
-            results, model_proposal=proposal, precedence=self.settings.escalation_precedence
+            results,
+            model_proposal=proposal,
+            precedence=self.settings.escalation_precedence,
+            verified_indicators=len(verified.risk_indicators) if verified else 0,  # O8
         )
         confidence = compute_confidence(
             results,

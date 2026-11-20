@@ -121,11 +121,46 @@ def test_model_cannot_loosen_a_control_floor() -> None:
     assert agg.outcome is R.REJECT_DUPLICATE and not agg.model_raised_outcome
 
 
-def test_model_escalation_alone_raises_with_generic_category() -> None:
-    agg = aggregate(ALL_PASS, model_proposal=R.ESCALATE_CONTROL_REVIEW, precedence=PRECEDENCE)
-    assert agg.outcome is R.ESCALATE_CONTROL_REVIEW
+def test_grounded_model_escalation_raises_with_generic_category() -> None:
+    agg = aggregate(
+        ALL_PASS,
+        model_proposal=R.ESCALATE_CONTROL_REVIEW,
+        precedence=PRECEDENCE,
+        verified_indicators=1,
+    )
+    assert agg.outcome is R.ESCALATE_CONTROL_REVIEW and not agg.model_escalation_ungrounded
     assert agg.exception_category is E.OTHER_CONTROL_RISK
     assert agg.escalation_target == "Financial Control"  # not the C6-sourced rule
+
+
+# --- O8: an ESCALATE proposal needs a verified risk indicator ---------------------------
+
+
+def test_o8_ungrounded_escalation_is_downgraded_to_hold() -> None:
+    agg = aggregate(ALL_PASS, model_proposal=R.ESCALATE_CONTROL_REVIEW, precedence=PRECEDENCE)
+    assert agg.outcome is R.HOLD_FOR_INFORMATION  # still blocks payment
+    assert agg.model_escalation_ungrounded and agg.model_proposal_capped
+    assert agg.model_raised_outcome
+
+
+def test_o8_ungrounded_escalation_cannot_override_reject_duplicate() -> None:
+    """Live FIN-002 regression: model agreed with every control, proposed ESCALATE anyway."""
+    results = _with(mk(ControlId.C2, S.FAIL, R.REJECT_DUPLICATE, E.DUPLICATE_RISK))
+    agg = aggregate(results, model_proposal=R.ESCALATE_CONTROL_REVIEW, precedence=PRECEDENCE)
+    assert agg.outcome is R.REJECT_DUPLICATE
+    assert agg.exception_category is E.DUPLICATE_RISK
+    assert not agg.model_raised_outcome and agg.model_escalation_ungrounded
+
+
+def test_o8_grounded_escalation_still_outranks_reject_duplicate() -> None:
+    results = _with(mk(ControlId.C2, S.FAIL, R.REJECT_DUPLICATE, E.DUPLICATE_RISK))
+    agg = aggregate(
+        results,
+        model_proposal=R.ESCALATE_CONTROL_REVIEW,
+        precedence=PRECEDENCE,
+        verified_indicators=1,
+    )
+    assert agg.outcome is R.ESCALATE_CONTROL_REVIEW and agg.model_raised_outcome
 
 
 # --- confidence ------------------------------------------------------------------------
