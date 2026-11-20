@@ -16,6 +16,7 @@ from ap_agent.controls.result import ControlResult
 from ap_agent.infra.observability.events import BudgetExhausted as BudgetExhaustedEvent
 from ap_agent.infra.observability.events import CitationRejected, ModelCall, ModelRepair
 from ap_agent.infra.observability.logger import RunEventLogger, utc_now_iso
+from ap_agent.infra.observability.tracing import NULL_TRACER, Tracer
 from ap_agent.infra.persistence.protocols import Store
 from ap_agent.infra.persistence.records import ModelCallRecord
 from ap_agent.orchestration.budget import Budget, BudgetExhausted
@@ -34,7 +35,9 @@ class ModelRunner:
         max_repairs: int,
         node: str = "ASSESS",
         clock: Callable[[], str] = utc_now_iso,
+        tracer: Tracer = NULL_TRACER,
     ) -> None:
+        self._tracer = tracer
         self._run_id = run_id
         self._client = client
         self._store = store
@@ -76,6 +79,7 @@ class ModelRunner:
                 ts=self._clock(),
             )
         )
+        self._tracer.generation(self._run_id, self._node, call_id, a)
         ok = a.parse_result == "ok"
         self._events.emit(
             ModelCall(

@@ -15,6 +15,7 @@ from typing import TextIO
 import structlog
 
 from ap_agent.infra.observability.events import EventPayload
+from ap_agent.infra.observability.tracing import NULL_TRACER, Tracer
 from ap_agent.infra.persistence.protocols import AuditRepository
 from ap_agent.infra.persistence.records import AuditEvent
 
@@ -66,10 +67,12 @@ class RunEventLogger:
         audit: AuditRepository,
         run_id: str,
         clock: Callable[[], str] = utc_now_iso,
+        tracer: Tracer = NULL_TRACER,
     ) -> None:
         self._audit = audit
         self._run_id = run_id
         self._clock = clock
+        self._tracer = tracer
         self._log = structlog.get_logger("ap.audit").bind(run_id=run_id)
 
     @property
@@ -102,4 +105,6 @@ class RunEventLogger:
             duration_ms=duration_ms,
             payload=event.payload,
         )
-        return event.model_copy(update={"event_id": event_id})
+        persisted = event.model_copy(update={"event_id": event_id})
+        self._tracer.event(persisted)  # after the audit row: tracing mirrors, never leads
+        return persisted
