@@ -97,3 +97,15 @@ def test_no_config_or_provider_access_in_core(path: Path) -> None:
     assert "os.environ" not in source and "getenv" not in source
     for name in _imports(path):
         assert name.split(".")[0] not in FORBIDDEN_EXTERNAL, f"{pkg} imports {name}"
+
+
+ANTHROPIC_ADAPTER = SRC / "assessment" / "adapters" / "anthropic.py"
+
+
+@pytest.mark.parametrize("path", SOURCE_FILES, ids=lambda p: str(p.relative_to(SRC)))
+def test_provider_sdk_imported_only_by_its_adapter(path: Path) -> None:
+    """The anthropic SDK lives behind the ModelClient port: one adapter file, nowhere else."""
+    if path == ANTHROPIC_ADAPTER:
+        return
+    for name in _imports(path):
+        assert name.split(".")[0] != "anthropic", f"{path.name} imports {name}"
