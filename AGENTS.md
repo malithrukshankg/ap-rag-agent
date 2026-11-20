@@ -81,18 +81,18 @@ These rules bind the build, but they are interpretations, not brief text.
 None outstanding. Gaps O1–O7 found while writing the architecture are resolved and recorded in `docs/architecture.md` §15 (our decisions): O1 headingless docs become one chunk; O2 FIN-POL-003-OLD pinned to null in the registry; O3 bank change is recent if after the last paid invoice; O4 model proposal capped at HOLD/ESCALATE; O5 fixed escalation precedence in config; O6 two repair attempts; O7 stale RUNNING runs marked FAILED on startup, caller re-runs. O8 (found in a live eval) a model ESCALATE counts only with a verified risk indicator, otherwise HOLD.
 
 ## Required deliverables
-- [ ] Runnable source code plus complete instructions to provision/configure, ingest documents, start the app and run the tests (§7)
-- [ ] README: environment choice, commands, model/API requirements, assumptions, supported flows, known limitations (§7); real vs simulated integrations (§3, §6)
-- [ ] README/setup: exact prerequisites, env vars, model config, ingestion/indexing steps, start commands, test/eval commands (§6)
-- [ ] Design note (~1-2 pages): orchestration, RAG design, trust boundaries, model/tool contracts, persistence, failure handling, production changes (§7). Also explain the retrieval strategy and its limitations (§4) and framework provides vs code enforces (§6)
-- [ ] Architecture diagram plus component/configuration manifest: model, agent runtime, document store/index, persistence, tools, API surface, trust boundaries (§6, §7)
-- [ ] Environment artefacts: config, IaC, deployment export, scripts or screenshots suited to the chosen setup. For local: reproducible scripts, containers or equivalent (§6, §7)
-- [ ] Cost/cleanup notes for any cloud resources. Example config only, no credentials (§6)
-- [ ] Automated tests for core orchestration, retrieval grounding and safety, with stable unit/contract tests kept separate from model-dependent integration/eval runs (§7)
-- [ ] Fixtures for FIN-001 to FIN-005 (§5)
-- [ ] Sample output or short transcript: one successful flow and one exception/approval flow (§7)
+- [x] Runnable source code plus complete instructions to provision/configure, ingest documents, start the app and run the tests (§7)
+- [x] README: environment choice, commands, model/API requirements, assumptions, supported flows, known limitations (§7); real vs simulated integrations (§3, §6)
+- [x] README/setup: exact prerequisites, env vars, model config, ingestion/indexing steps, start commands, test/eval commands (§6)
+- [x] Design note (~1-2 pages): orchestration, RAG design, trust boundaries, model/tool contracts, persistence, failure handling, production changes (§7). Also explain the retrieval strategy and its limitations (§4) and framework provides vs code enforces (§6)
+- [x] Architecture diagram plus component/configuration manifest: model, agent runtime, document store/index, persistence, tools, API surface, trust boundaries (§6, §7)
+- [x] Environment artefacts: config, IaC, deployment export, scripts or screenshots suited to the chosen setup. For local: reproducible scripts, containers or equivalent (§6, §7)
+- [x] Cost/cleanup notes for any cloud resources. Example config only, no credentials (§6)
+- [x] Automated tests for core orchestration, retrieval grounding and safety, with stable unit/contract tests kept separate from model-dependent integration/eval runs (§7)
+- [x] Fixtures for FIN-001 to FIN-005 (§5)
+- [x] Sample output or short transcript: one successful flow and one exception/approval flow (§7)
 - [ ] Declaration of AI tool use, approximate time spent, and any code/libraries/generated material not authored (§7, §11)
-- [ ] Documented unfinished work and deliberate trade-offs (§8)
+- [x] Documented unfinished work and deliberate trade-offs (§8)
 
 ## Required interface and tools
 Operations, via HTTP endpoints or equivalent CLI commands (§2):

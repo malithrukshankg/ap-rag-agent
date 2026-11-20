@@ -1,0 +1,2809 @@
+{
+  "start": {
+    "run_id": "run-809b228e4e97",
+    "case_id": "FIN-001",
+    "status": "AWAITING_APPROVAL",
+    "current_node": "REQUEST_APPROVAL",
+    "failure_reason": null,
+    "budget": {
+      "model_calls_limit": 10,
+      "model_calls_used": 1,
+      "steps_limit": 25,
+      "steps_used": 7,
+      "tool_calls_limit": 25,
+      "tool_calls_used": 11
+    },
+    "result": {
+      "actions_taken": [
+        {
+          "action": "approval_requested",
+          "at": "2026-11-20T19:42:00.236739+11:00",
+          "detail": "awaiting an authorised approver",
+          "reference": "apr-6ae6d047795f"
+        }
+      ],
+      "applied_policy_versions": {
+        "FIN-POL-001": "3.2",
+        "FIN-POL-002": "2.4",
+        "FIN-POL-003": "4.0",
+        "FIN-POL-004": "5.1",
+        "FIN-POL-005": "2.8"
+      },
+      "approval": {
+        "approver_id": null,
+        "decided_at": null,
+        "decision_fingerprint": "0336c973682684d92c9f99a1b9f6873ed93b8054fd1b1b200497cd3d6aa2608a",
+        "status": "PENDING",
+        "verdict": null
+      },
+      "assumptions": [
+        "Invoices arrive as structured JSON; invoice line extraction from PDFs is out of scope.",
+        "Approver identity is asserted by the caller and trusted (no authentication).",
+        "Vendor, purchase-order, invoice-history, FX and ledger systems are simulated fixtures."
+      ],
+      "calculations": [
+        {
+          "currency": "AUD",
+          "formula": "quantity * unit_price",
+          "id": "calc-001",
+          "inputs": {
+            "quantity": "20",
+            "unit_price": "245.00"
+          },
+          "result": "4900.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "abs(actual - expected)",
+          "id": "calc-002",
+          "inputs": {
+            "actual": "4900.00",
+            "expected": "4900.00"
+          },
+          "result": "0.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "min(absolute_limit, po_line_value * percent_limit / 100)",
+          "id": "calc-003",
+          "inputs": {
+            "absolute_limit": "50",
+            "percent_limit": "1",
+            "po_line_value": "4900.00"
+          },
+          "result": "49.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "quantity * unit_price",
+          "id": "calc-004",
+          "inputs": {
+            "quantity": "10",
+            "unit_price": "60.00"
+          },
+          "result": "600.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "abs(actual - expected)",
+          "id": "calc-005",
+          "inputs": {
+            "actual": "600.00",
+            "expected": "600.00"
+          },
+          "result": "0.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "min(absolute_limit, po_line_value * percent_limit / 100)",
+          "id": "calc-006",
+          "inputs": {
+            "absolute_limit": "50",
+            "percent_limit": "1",
+            "po_line_value": "600.00"
+          },
+          "result": "6.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "amount_1 + amount_2",
+          "id": "calc-007",
+          "inputs": {
+            "amount_1": "4900.00",
+            "amount_2": "600.00"
+          },
+          "result": "5500.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "abs(actual - expected)",
+          "id": "calc-008",
+          "inputs": {
+            "actual": "5500.00",
+            "expected": "5500.00"
+          },
+          "result": "0.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "amount_1 + amount_2",
+          "id": "calc-009",
+          "inputs": {
+            "amount_1": "4900.00",
+            "amount_2": "600.00"
+          },
+          "result": "5500.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "abs(actual - expected)",
+          "id": "calc-010",
+          "inputs": {
+            "actual": "5500.00",
+            "expected": "5500.00"
+          },
+          "result": "0.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "min(absolute_limit, po_line_value * percent_limit / 100)",
+          "id": "calc-011",
+          "inputs": {
+            "absolute_limit": "50",
+            "percent_limit": "1",
+            "po_line_value": "5500.00"
+          },
+          "result": "50.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        }
+      ],
+      "case_id": "FIN-001",
+      "decision_fingerprint": "0336c973682684d92c9f99a1b9f6873ed93b8054fd1b1b200497cd3d6aa2608a",
+      "inferences": [
+        {
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "AUD 50 absolute variance",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            }
+          ],
+          "origin": "model",
+          "text": "Both invoice lines match PO-1001 and the recorded goods receipts within the goods tolerance."
+        },
+        {
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Cost Centre Manager | AUD 10,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            }
+          ],
+          "origin": "model",
+          "text": "The total commitment is within a Cost Centre Manager's delegated limit."
+        }
+      ],
+      "policy_findings": [
+        {
+          "calculation_ids": [],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-001§2@v3.2",
+              "doc_id": "FIN-POL-001",
+              "quote": "supplier legal name, invoice number, invoice date, currency, gross amount",
+              "section": 2,
+              "text_sha256": "d1dbfd9c72cfb600307d803fe34356be1ed425b2e19e1c4ca2eaf71147c2e9a0",
+              "trust": "trusted",
+              "version": "3.2"
+            }
+          ],
+          "control_id": "C1",
+          "exception_category": null,
+          "expected": "every FIN-POL-001 §2 field present",
+          "missing_evidence": [],
+          "observed": "supplier, invoice number and date, currency, gross amount, PO reference present",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-001 §2 minimum invoice evidence",
+          "status": "PASS",
+          "threshold": null,
+          "tool_call_ids": []
+        },
+        {
+          "calculation_ids": [],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-005§2@v2.8",
+              "doc_id": "FIN-POL-005",
+              "quote": "exact match to a paid or posted invoice results in `REJECT_DUPLICATE`",
+              "section": 2,
+              "text_sha256": "cf4af07d4ed29184d3dfd14c6ba7d7570e9606d386356b0808c2d7c332d69d38",
+              "trust": "trusted",
+              "version": "2.8"
+            },
+            {
+              "chunk_id": "FIN-POL-005§1@v2.8",
+              "doc_id": "FIN-POL-005",
+              "quote": "invoice date within 14 days",
+              "section": 1,
+              "text_sha256": "6cfe0510ed67f32e4d0e0ddfa4121e5de6b837eeb64c0b6da269235306d5c4dc",
+              "trust": "trusted",
+              "version": "2.8"
+            },
+            {
+              "chunk_id": "FIN-POL-005§1@v2.8",
+              "doc_id": "FIN-POL-005",
+              "quote": "amount variance below 0.5%",
+              "section": 1,
+              "text_sha256": "6cfe0510ed67f32e4d0e0ddfa4121e5de6b837eeb64c0b6da269235306d5c4dc",
+              "trust": "trusted",
+              "version": "2.8"
+            }
+          ],
+          "control_id": "C2",
+          "exception_category": null,
+          "expected": "no exact or probable duplicate",
+          "missing_evidence": [],
+          "observed": "1 prior invoice(s) for vendor; none match",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-005 §1-2 duplicate invoice detection",
+          "status": "PASS",
+          "threshold": null,
+          "tool_call_ids": [
+            "run-809b228e4e97-tc-010"
+          ]
+        },
+        {
+          "calculation_ids": [],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-004§4@v5.1",
+              "doc_id": "FIN-POL-004",
+              "quote": "`PENDING_VERIFICATION` vendors must be held",
+              "section": 4,
+              "text_sha256": "9e76e7f88fed2559bf3d6e892d24c3d1fb273c1011dd09cf301384923b1929d0",
+              "trust": "trusted",
+              "version": "5.1"
+            },
+            {
+              "chunk_id": "FIN-POL-004§2@v5.1",
+              "doc_id": "FIN-POL-004",
+              "quote": "The first subsequent payment requires Financial Control co-approval",
+              "section": 2,
+              "text_sha256": "cb9f24bcc2525c3ead1accd2a6f0d1ee21c3135ac89419b77b8531de3143fa26",
+              "trust": "trusted",
+              "version": "5.1"
+            }
+          ],
+          "control_id": "C3",
+          "exception_category": null,
+          "expected": "active vendor; payment instructions match the vendor master",
+          "missing_evidence": [],
+          "observed": "vendor V-1001 ACTIVE; account ending 7723",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-004 §2, §4 vendor status and bank details",
+          "status": "PASS",
+          "threshold": null,
+          "tool_call_ids": [
+            "run-809b228e4e97-tc-009",
+            "run-809b228e4e97-tc-010"
+          ]
+        },
+        {
+          "calculation_ids": [
+            "calc-001",
+            "calc-002",
+            "calc-003",
+            "calc-004",
+            "calc-005",
+            "calc-006",
+            "calc-007",
+            "calc-008",
+            "calc-009",
+            "calc-010",
+            "calc-011"
+          ],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "AUD 50 absolute variance",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            },
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "1% of the PO line value",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            },
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "AUD 100 or 2%",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            },
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "Freight may vary by up to AUD 75",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            }
+          ],
+          "control_id": "C4",
+          "exception_category": null,
+          "expected": "invoice, PO PO-1001 and receipts agree within tolerance",
+          "missing_evidence": [],
+          "observed": "2 line(s) matched; quantities received; total within tolerance",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-002 §1-5 three-way match and tolerances",
+          "status": "PASS",
+          "threshold": "lower of absolute limit and % of PO line value (FIN-POL-002 §2)",
+          "tool_call_ids": [
+            "run-809b228e4e97-tc-011"
+          ]
+        },
+        {
+          "calculation_ids": [],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Cost Centre Manager | AUD 10,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Department Director | AUD 50,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Executive Director | AUD 250,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Chief Financial Officer | AUD 1,000,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§3@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "require two approvals",
+              "section": 3,
+              "text_sha256": "6870efa267e2da2978984a6dbabae6fe8941d5e9b0858e20fa6eab70e8f9e4dd",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§3@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "new vendor less than 30 days old",
+              "section": 3,
+              "text_sha256": "6870efa267e2da2978984a6dbabae6fe8941d5e9b0858e20fa6eab70e8f9e4dd",
+              "trust": "trusted",
+              "version": "4.0"
+            }
+          ],
+          "control_id": "C5",
+          "exception_category": null,
+          "expected": "approver with authority for AUD 6,050.00",
+          "missing_evidence": [],
+          "observed": "required role: Cost Centre Manager (limit AUD 10,000.00); no higher-risk triggers",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-003 §1-3 delegated financial authority",
+          "status": "PASS",
+          "threshold": "total commitment AUD 6,050.00",
+          "tool_call_ids": [
+            "run-809b228e4e97-tc-009",
+            "run-809b228e4e97-tc-010"
+          ]
+        },
+        {
+          "calculation_ids": [],
+          "citations": [],
+          "control_id": "C6",
+          "exception_category": null,
+          "expected": null,
+          "missing_evidence": [],
+          "observed": "no case free text and no model-flagged indicators",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-005 §3-4 fraud indicators in untrusted content",
+          "status": "NOT_APPLICABLE",
+          "threshold": null,
+          "tool_call_ids": []
+        }
+      ],
+      "recommendation": {
+        "confidence": {
+          "basis": [
+            "every control determinate",
+            "every model claim verified"
+          ],
+          "level": "HIGH"
+        },
+        "escalation_target": null,
+        "exception_category": null,
+        "next_action": "Await an authorised approver's decision (§2.5).",
+        "outcome": "APPROVE_FOR_POSTING",
+        "reasons": []
+      },
+      "run_id": "run-809b228e4e97",
+      "sourced_facts": [
+        {
+          "citation": null,
+          "statement": "vendor status",
+          "tool_call_id": "run-809b228e4e97-tc-009",
+          "value": "ACTIVE"
+        },
+        {
+          "citation": null,
+          "statement": "vendor master account (last four digits)",
+          "tool_call_id": "run-809b228e4e97-tc-009",
+          "value": "7723"
+        },
+        {
+          "citation": null,
+          "statement": "purchase order PO-1001 total",
+          "tool_call_id": "run-809b228e4e97-tc-011",
+          "value": "AUD 5500.00"
+        },
+        {
+          "citation": null,
+          "statement": "goods receipts on the purchase order",
+          "tool_call_id": "run-809b228e4e97-tc-011",
+          "value": "2"
+        },
+        {
+          "citation": null,
+          "statement": "prior invoices for the vendor",
+          "tool_call_id": "run-809b228e4e97-tc-010",
+          "value": "1"
+        }
+      ],
+      "status": "AWAITING_APPROVAL",
+      "unknowns": []
+    },
+    "audit_events": [
+      {
+        "ts": "2026-11-20T08:42:00.143+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "INTAKE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 1
+      },
+      {
+        "ts": "2026-11-20T08:42:00.144+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "run.started",
+        "node": "INTAKE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "case_id": "FIN-001"
+        },
+        "event_id": 2
+      },
+      {
+        "ts": "2026-11-20T08:42:00.146+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "INTAKE",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "payload": {},
+        "event_id": 3
+      },
+      {
+        "ts": "2026-11-20T08:42:00.147+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 4
+      },
+      {
+        "ts": "2026-11-20T08:42:00.148+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-001"
+        },
+        "event_id": 5
+      },
+      {
+        "ts": "2026-11-20T08:42:00.149+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-005§2@v2.8",
+            "FIN-POL-012§3@v3.5",
+            "FIN-POL-011§2@v2.7",
+            "FIN-POL-001§5@v3.2",
+            "FIN-POL-001§2@v3.2"
+          ],
+          "query_label": "C1",
+          "retrieval_id": "run-809b228e4e97-r-01",
+          "untrusted_chunk_ids": []
+        },
+        "event_id": 6
+      },
+      {
+        "ts": "2026-11-20T08:42:00.151+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-002"
+        },
+        "event_id": 7
+      },
+      {
+        "ts": "2026-11-20T08:42:00.152+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-005§2@v2.8",
+            "FIN-POL-005§1@v2.8",
+            "ADV-001§0@v1.0",
+            "FIN-POL-006§2@v3.0",
+            "FIN-POL-007§1@v1.9"
+          ],
+          "query_label": "C2",
+          "retrieval_id": "run-809b228e4e97-r-02",
+          "untrusted_chunk_ids": [
+            "ADV-001§0@v1.0"
+          ]
+        },
+        "event_id": 8
+      },
+      {
+        "ts": "2026-11-20T08:42:00.154+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-003"
+        },
+        "event_id": 9
+      },
+      {
+        "ts": "2026-11-20T08:42:00.154+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-004§2@v5.1",
+            "FIN-POL-004§3@v5.1",
+            "FIN-POL-003§3@v4.0",
+            "FIN-POL-004§1@v5.1",
+            "ADV-001§0@v1.0"
+          ],
+          "query_label": "C3",
+          "retrieval_id": "run-809b228e4e97-r-03",
+          "untrusted_chunk_ids": [
+            "ADV-001§0@v1.0"
+          ]
+        },
+        "event_id": 10
+      },
+      {
+        "ts": "2026-11-20T08:42:00.156+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-004"
+        },
+        "event_id": 11
+      },
+      {
+        "ts": "2026-11-20T08:42:00.157+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-004§4@v5.1",
+            "FIN-POL-004§1@v5.1",
+            "FIN-POL-001§5@v3.2",
+            "FIN-POL-007§1@v1.9",
+            "FIN-POL-001§3@v3.2"
+          ],
+          "query_label": "C3-STATUS",
+          "retrieval_id": "run-809b228e4e97-r-04",
+          "untrusted_chunk_ids": []
+        },
+        "event_id": 12
+      },
+      {
+        "ts": "2026-11-20T08:42:00.159+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-005"
+        },
+        "event_id": 13
+      },
+      {
+        "ts": "2026-11-20T08:42:00.159+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-002§1@v2.4",
+            "FIN-POL-011§2@v2.7",
+            "FIN-POL-001§5@v3.2",
+            "FIN-POL-005§1@v2.8",
+            "FIN-POL-002§2@v2.4"
+          ],
+          "query_label": "C4",
+          "retrieval_id": "run-809b228e4e97-r-05",
+          "untrusted_chunk_ids": []
+        },
+        "event_id": 14
+      },
+      {
+        "ts": "2026-11-20T08:42:00.162+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-006"
+        },
+        "event_id": 15
+      },
+      {
+        "ts": "2026-11-20T08:42:00.163+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-003§4@v4.0",
+            "FIN-POL-002§3@v2.4",
+            "FIN-POL-003§1@v4.0",
+            "FIN-POL-011§3@v2.7",
+            "FIN-POL-003§5@v4.0"
+          ],
+          "query_label": "C5",
+          "retrieval_id": "run-809b228e4e97-r-06",
+          "untrusted_chunk_ids": []
+        },
+        "event_id": 16
+      },
+      {
+        "ts": "2026-11-20T08:42:00.164+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-007"
+        },
+        "event_id": 17
+      },
+      {
+        "ts": "2026-11-20T08:42:00.165+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-003§2@v4.0",
+            "FIN-POL-012§3@v3.5",
+            "FIN-POL-011§2@v2.7",
+            "FIN-POL-008§5@v2.1",
+            "ADV-001§0@v1.0"
+          ],
+          "query_label": "C5-LIMITS",
+          "retrieval_id": "run-809b228e4e97-r-07",
+          "untrusted_chunk_ids": [
+            "ADV-001§0@v1.0"
+          ]
+        },
+        "event_id": 18
+      },
+      {
+        "ts": "2026-11-20T08:42:00.166+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-008"
+        },
+        "event_id": 19
+      },
+      {
+        "ts": "2026-11-20T08:42:00.167+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-005§3@v2.8",
+            "ADV-001§0@v1.0",
+            "FIN-POL-001§1@v3.2",
+            "FIN-POL-008§5@v2.1",
+            "FIN-POL-005§4@v2.8"
+          ],
+          "query_label": "C6",
+          "retrieval_id": "run-809b228e4e97-r-08",
+          "untrusted_chunk_ids": [
+            "ADV-001§0@v1.0"
+          ]
+        },
+        "event_id": 20
+      },
+      {
+        "ts": "2026-11-20T08:42:00.169+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 21,
+        "payload": {},
+        "event_id": 21
+      },
+      {
+        "ts": "2026-11-20T08:42:00.171+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 22
+      },
+      {
+        "ts": "2026-11-20T08:42:00.173+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {
+          "attempt": 1,
+          "tool": "get_vendor_record",
+          "tool_call_id": "run-809b228e4e97-tc-009"
+        },
+        "event_id": 23
+      },
+      {
+        "ts": "2026-11-20T08:42:00.177+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {
+          "attempt": 1,
+          "tool": "check_invoice_history",
+          "tool_call_id": "run-809b228e4e97-tc-010"
+        },
+        "event_id": 24
+      },
+      {
+        "ts": "2026-11-20T08:42:00.179+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {
+          "attempt": 1,
+          "tool": "get_purchase_order",
+          "tool_call_id": "run-809b228e4e97-tc-011"
+        },
+        "event_id": 25
+      },
+      {
+        "ts": "2026-11-20T08:42:00.181+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": 9,
+        "payload": {},
+        "event_id": 26
+      },
+      {
+        "ts": "2026-11-20T08:42:00.183+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 27
+      },
+      {
+        "ts": "2026-11-20T08:42:00.201+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C1",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 28
+      },
+      {
+        "ts": "2026-11-20T08:42:00.201+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C2",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 29
+      },
+      {
+        "ts": "2026-11-20T08:42:00.203+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C3",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 30
+      },
+      {
+        "ts": "2026-11-20T08:42:00.204+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C4",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 31
+      },
+      {
+        "ts": "2026-11-20T08:42:00.205+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C5",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 32
+      },
+      {
+        "ts": "2026-11-20T08:42:00.206+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C6",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "NOT_APPLICABLE"
+        },
+        "event_id": 33
+      },
+      {
+        "ts": "2026-11-20T08:42:00.207+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": 7,
+        "payload": {},
+        "event_id": 34
+      },
+      {
+        "ts": "2026-11-20T08:42:00.208+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "ASSESS",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 35
+      },
+      {
+        "ts": "2026-11-20T08:42:00.210+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "model.call",
+        "node": "ASSESS",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "input_tokens": 0,
+          "model_call_id": "run-809b228e4e97-mc-001",
+          "output_tokens": 0,
+          "parse_ok": true,
+          "prompt_sha256": "5201c9807ce2c28c21d77cd3e27e53275fac62ea8c004e03657efc2e11c4c546"
+        },
+        "event_id": 36
+      },
+      {
+        "ts": "2026-11-20T08:42:00.212+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "ASSESS",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "payload": {},
+        "event_id": 37
+      },
+      {
+        "ts": "2026-11-20T08:42:00.213+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "DECIDE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 38
+      },
+      {
+        "ts": "2026-11-20T08:42:00.233+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "DECIDE",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "payload": {},
+        "event_id": 39
+      },
+      {
+        "ts": "2026-11-20T08:42:00.234+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "REQUEST_APPROVAL",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 40
+      },
+      {
+        "ts": "2026-11-20T08:42:00.235+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "approval.requested",
+        "node": "REQUEST_APPROVAL",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "approval_id": "apr-6ae6d047795f",
+          "decision_fingerprint": "0336c973682684d92c9f99a1b9f6873ed93b8054fd1b1b200497cd3d6aa2608a"
+        },
+        "event_id": 41
+      },
+      {
+        "ts": "2026-11-20T08:42:00.238+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "REQUEST_APPROVAL",
+        "outcome": "ok",
+        "duration_ms": 3,
+        "payload": {},
+        "event_id": 42
+      }
+    ],
+    "timeline": null
+  },
+  "approval_1": {
+    "run_id": "run-809b228e4e97",
+    "accepted": true,
+    "failed_check": null,
+    "reason": null,
+    "response": {
+      "approval_id": "apr-6ae6d047795f",
+      "approval_status": "APPROVED",
+      "approver_id": "A-CCM-01",
+      "decided_at": "2026-11-20T08:42:00.251+00:00",
+      "decision": "POST_FOR_PAYMENT",
+      "decision_id": "dec-fae1b59ed104",
+      "idempotency_key": "dd3eeabbc51c082c42c6a199decc300d28616a43ba6b29c5677e146af5c3d960",
+      "ledger_ref": "L-9c74338ca1cf",
+      "run_id": "run-809b228e4e97",
+      "verdict": "approve"
+    }
+  },
+  "approval_2": {
+    "run_id": "run-809b228e4e97",
+    "accepted": true,
+    "failed_check": null,
+    "reason": null,
+    "response": {
+      "approval_id": "apr-6ae6d047795f",
+      "approval_status": "APPROVED",
+      "approver_id": "A-CCM-01",
+      "decided_at": "2026-11-20T08:42:00.251+00:00",
+      "decision": "POST_FOR_PAYMENT",
+      "decision_id": "dec-fae1b59ed104",
+      "idempotency_key": "dd3eeabbc51c082c42c6a199decc300d28616a43ba6b29c5677e146af5c3d960",
+      "ledger_ref": "L-9c74338ca1cf",
+      "run_id": "run-809b228e4e97",
+      "verdict": "approve"
+    }
+  },
+  "final": {
+    "run_id": "run-809b228e4e97",
+    "case_id": "FIN-001",
+    "status": "COMPLETED",
+    "current_node": "END",
+    "failure_reason": null,
+    "budget": {
+      "model_calls_limit": 10,
+      "model_calls_used": 1,
+      "steps_limit": 25,
+      "steps_used": 10,
+      "tool_calls_limit": 25,
+      "tool_calls_used": 12
+    },
+    "result": {
+      "actions_taken": [
+        {
+          "action": "approval_requested",
+          "at": "2026-11-20T19:42:00.236739+11:00",
+          "detail": "awaiting an authorised approver",
+          "reference": "apr-6ae6d047795f"
+        },
+        {
+          "action": "decision_recorded",
+          "at": "2026-11-20T19:42:00.263136+11:00",
+          "detail": "POST_FOR_PAYMENT recorded (RECORDED); ledger L-9c74338ca1cf",
+          "reference": "dec-fae1b59ed104"
+        }
+      ],
+      "applied_policy_versions": {
+        "FIN-POL-001": "3.2",
+        "FIN-POL-002": "2.4",
+        "FIN-POL-003": "4.0",
+        "FIN-POL-004": "5.1",
+        "FIN-POL-005": "2.8"
+      },
+      "approval": {
+        "approver_id": "A-CCM-01",
+        "decided_at": "2026-11-20T08:42:00.251000Z",
+        "decision_fingerprint": "0336c973682684d92c9f99a1b9f6873ed93b8054fd1b1b200497cd3d6aa2608a",
+        "status": "APPROVED",
+        "verdict": "approve"
+      },
+      "assumptions": [
+        "Invoices arrive as structured JSON; invoice line extraction from PDFs is out of scope.",
+        "Approver identity is asserted by the caller and trusted (no authentication).",
+        "Vendor, purchase-order, invoice-history, FX and ledger systems are simulated fixtures."
+      ],
+      "calculations": [
+        {
+          "currency": "AUD",
+          "formula": "quantity * unit_price",
+          "id": "calc-001",
+          "inputs": {
+            "quantity": "20",
+            "unit_price": "245.00"
+          },
+          "result": "4900.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "abs(actual - expected)",
+          "id": "calc-002",
+          "inputs": {
+            "actual": "4900.00",
+            "expected": "4900.00"
+          },
+          "result": "0.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "min(absolute_limit, po_line_value * percent_limit / 100)",
+          "id": "calc-003",
+          "inputs": {
+            "absolute_limit": "50",
+            "percent_limit": "1",
+            "po_line_value": "4900.00"
+          },
+          "result": "49.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "quantity * unit_price",
+          "id": "calc-004",
+          "inputs": {
+            "quantity": "10",
+            "unit_price": "60.00"
+          },
+          "result": "600.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "abs(actual - expected)",
+          "id": "calc-005",
+          "inputs": {
+            "actual": "600.00",
+            "expected": "600.00"
+          },
+          "result": "0.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "min(absolute_limit, po_line_value * percent_limit / 100)",
+          "id": "calc-006",
+          "inputs": {
+            "absolute_limit": "50",
+            "percent_limit": "1",
+            "po_line_value": "600.00"
+          },
+          "result": "6.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "amount_1 + amount_2",
+          "id": "calc-007",
+          "inputs": {
+            "amount_1": "4900.00",
+            "amount_2": "600.00"
+          },
+          "result": "5500.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "abs(actual - expected)",
+          "id": "calc-008",
+          "inputs": {
+            "actual": "5500.00",
+            "expected": "5500.00"
+          },
+          "result": "0.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "amount_1 + amount_2",
+          "id": "calc-009",
+          "inputs": {
+            "amount_1": "4900.00",
+            "amount_2": "600.00"
+          },
+          "result": "5500.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "abs(actual - expected)",
+          "id": "calc-010",
+          "inputs": {
+            "actual": "5500.00",
+            "expected": "5500.00"
+          },
+          "result": "0.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        },
+        {
+          "currency": "AUD",
+          "formula": "min(absolute_limit, po_line_value * percent_limit / 100)",
+          "id": "calc-011",
+          "inputs": {
+            "absolute_limit": "50",
+            "percent_limit": "1",
+            "po_line_value": "5500.00"
+          },
+          "result": "50.00",
+          "rounding": "ROUND_HALF_UP to 2 dp"
+        }
+      ],
+      "case_id": "FIN-001",
+      "decision_fingerprint": "0336c973682684d92c9f99a1b9f6873ed93b8054fd1b1b200497cd3d6aa2608a",
+      "inferences": [
+        {
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "AUD 50 absolute variance",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            }
+          ],
+          "origin": "model",
+          "text": "Both invoice lines match PO-1001 and the recorded goods receipts within the goods tolerance."
+        },
+        {
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Cost Centre Manager | AUD 10,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            }
+          ],
+          "origin": "model",
+          "text": "The total commitment is within a Cost Centre Manager's delegated limit."
+        }
+      ],
+      "policy_findings": [
+        {
+          "calculation_ids": [],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-001§2@v3.2",
+              "doc_id": "FIN-POL-001",
+              "quote": "supplier legal name, invoice number, invoice date, currency, gross amount",
+              "section": 2,
+              "text_sha256": "d1dbfd9c72cfb600307d803fe34356be1ed425b2e19e1c4ca2eaf71147c2e9a0",
+              "trust": "trusted",
+              "version": "3.2"
+            }
+          ],
+          "control_id": "C1",
+          "exception_category": null,
+          "expected": "every FIN-POL-001 §2 field present",
+          "missing_evidence": [],
+          "observed": "supplier, invoice number and date, currency, gross amount, PO reference present",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-001 §2 minimum invoice evidence",
+          "status": "PASS",
+          "threshold": null,
+          "tool_call_ids": []
+        },
+        {
+          "calculation_ids": [],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-005§2@v2.8",
+              "doc_id": "FIN-POL-005",
+              "quote": "exact match to a paid or posted invoice results in `REJECT_DUPLICATE`",
+              "section": 2,
+              "text_sha256": "cf4af07d4ed29184d3dfd14c6ba7d7570e9606d386356b0808c2d7c332d69d38",
+              "trust": "trusted",
+              "version": "2.8"
+            },
+            {
+              "chunk_id": "FIN-POL-005§1@v2.8",
+              "doc_id": "FIN-POL-005",
+              "quote": "invoice date within 14 days",
+              "section": 1,
+              "text_sha256": "6cfe0510ed67f32e4d0e0ddfa4121e5de6b837eeb64c0b6da269235306d5c4dc",
+              "trust": "trusted",
+              "version": "2.8"
+            },
+            {
+              "chunk_id": "FIN-POL-005§1@v2.8",
+              "doc_id": "FIN-POL-005",
+              "quote": "amount variance below 0.5%",
+              "section": 1,
+              "text_sha256": "6cfe0510ed67f32e4d0e0ddfa4121e5de6b837eeb64c0b6da269235306d5c4dc",
+              "trust": "trusted",
+              "version": "2.8"
+            }
+          ],
+          "control_id": "C2",
+          "exception_category": null,
+          "expected": "no exact or probable duplicate",
+          "missing_evidence": [],
+          "observed": "1 prior invoice(s) for vendor; none match",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-005 §1-2 duplicate invoice detection",
+          "status": "PASS",
+          "threshold": null,
+          "tool_call_ids": [
+            "run-809b228e4e97-tc-010"
+          ]
+        },
+        {
+          "calculation_ids": [],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-004§4@v5.1",
+              "doc_id": "FIN-POL-004",
+              "quote": "`PENDING_VERIFICATION` vendors must be held",
+              "section": 4,
+              "text_sha256": "9e76e7f88fed2559bf3d6e892d24c3d1fb273c1011dd09cf301384923b1929d0",
+              "trust": "trusted",
+              "version": "5.1"
+            },
+            {
+              "chunk_id": "FIN-POL-004§2@v5.1",
+              "doc_id": "FIN-POL-004",
+              "quote": "The first subsequent payment requires Financial Control co-approval",
+              "section": 2,
+              "text_sha256": "cb9f24bcc2525c3ead1accd2a6f0d1ee21c3135ac89419b77b8531de3143fa26",
+              "trust": "trusted",
+              "version": "5.1"
+            }
+          ],
+          "control_id": "C3",
+          "exception_category": null,
+          "expected": "active vendor; payment instructions match the vendor master",
+          "missing_evidence": [],
+          "observed": "vendor V-1001 ACTIVE; account ending 7723",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-004 §2, §4 vendor status and bank details",
+          "status": "PASS",
+          "threshold": null,
+          "tool_call_ids": [
+            "run-809b228e4e97-tc-009",
+            "run-809b228e4e97-tc-010"
+          ]
+        },
+        {
+          "calculation_ids": [
+            "calc-001",
+            "calc-002",
+            "calc-003",
+            "calc-004",
+            "calc-005",
+            "calc-006",
+            "calc-007",
+            "calc-008",
+            "calc-009",
+            "calc-010",
+            "calc-011"
+          ],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "AUD 50 absolute variance",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            },
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "1% of the PO line value",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            },
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "AUD 100 or 2%",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            },
+            {
+              "chunk_id": "FIN-POL-002§2@v2.4",
+              "doc_id": "FIN-POL-002",
+              "quote": "Freight may vary by up to AUD 75",
+              "section": 2,
+              "text_sha256": "797fc7cae8f39b5b037826c73c4d64544e5df187db3c63d7c8ecd637b72898ee",
+              "trust": "trusted",
+              "version": "2.4"
+            }
+          ],
+          "control_id": "C4",
+          "exception_category": null,
+          "expected": "invoice, PO PO-1001 and receipts agree within tolerance",
+          "missing_evidence": [],
+          "observed": "2 line(s) matched; quantities received; total within tolerance",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-002 §1-5 three-way match and tolerances",
+          "status": "PASS",
+          "threshold": "lower of absolute limit and % of PO line value (FIN-POL-002 §2)",
+          "tool_call_ids": [
+            "run-809b228e4e97-tc-011"
+          ]
+        },
+        {
+          "calculation_ids": [],
+          "citations": [
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Cost Centre Manager | AUD 10,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Department Director | AUD 50,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Executive Director | AUD 250,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§2@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "Chief Financial Officer | AUD 1,000,000",
+              "section": 2,
+              "text_sha256": "e4dd9e5cff2cd9a7447cebef50ea20ecc4d859ab755a9af20744949221839bc6",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§3@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "require two approvals",
+              "section": 3,
+              "text_sha256": "6870efa267e2da2978984a6dbabae6fe8941d5e9b0858e20fa6eab70e8f9e4dd",
+              "trust": "trusted",
+              "version": "4.0"
+            },
+            {
+              "chunk_id": "FIN-POL-003§3@v4.0",
+              "doc_id": "FIN-POL-003",
+              "quote": "new vendor less than 30 days old",
+              "section": 3,
+              "text_sha256": "6870efa267e2da2978984a6dbabae6fe8941d5e9b0858e20fa6eab70e8f9e4dd",
+              "trust": "trusted",
+              "version": "4.0"
+            }
+          ],
+          "control_id": "C5",
+          "exception_category": null,
+          "expected": "approver with authority for AUD 6,050.00",
+          "missing_evidence": [],
+          "observed": "required role: Cost Centre Manager (limit AUD 10,000.00); no higher-risk triggers",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-003 §1-3 delegated financial authority",
+          "status": "PASS",
+          "threshold": "total commitment AUD 6,050.00",
+          "tool_call_ids": [
+            "run-809b228e4e97-tc-009",
+            "run-809b228e4e97-tc-010"
+          ]
+        },
+        {
+          "calculation_ids": [],
+          "citations": [],
+          "control_id": "C6",
+          "exception_category": null,
+          "expected": null,
+          "missing_evidence": [],
+          "observed": "no case free text and no model-flagged indicators",
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "rule": "FIN-POL-005 §3-4 fraud indicators in untrusted content",
+          "status": "NOT_APPLICABLE",
+          "threshold": null,
+          "tool_call_ids": []
+        }
+      ],
+      "recommendation": {
+        "confidence": {
+          "basis": [
+            "every control determinate",
+            "every model claim verified"
+          ],
+          "level": "HIGH"
+        },
+        "escalation_target": null,
+        "exception_category": null,
+        "next_action": "Await an authorised approver's decision (§2.5).",
+        "outcome": "APPROVE_FOR_POSTING",
+        "reasons": []
+      },
+      "run_id": "run-809b228e4e97",
+      "sourced_facts": [
+        {
+          "citation": null,
+          "statement": "vendor status",
+          "tool_call_id": "run-809b228e4e97-tc-009",
+          "value": "ACTIVE"
+        },
+        {
+          "citation": null,
+          "statement": "vendor master account (last four digits)",
+          "tool_call_id": "run-809b228e4e97-tc-009",
+          "value": "7723"
+        },
+        {
+          "citation": null,
+          "statement": "purchase order PO-1001 total",
+          "tool_call_id": "run-809b228e4e97-tc-011",
+          "value": "AUD 5500.00"
+        },
+        {
+          "citation": null,
+          "statement": "goods receipts on the purchase order",
+          "tool_call_id": "run-809b228e4e97-tc-011",
+          "value": "2"
+        },
+        {
+          "citation": null,
+          "statement": "prior invoices for the vendor",
+          "tool_call_id": "run-809b228e4e97-tc-010",
+          "value": "1"
+        }
+      ],
+      "status": "COMPLETED",
+      "unknowns": []
+    },
+    "audit_events": [
+      {
+        "ts": "2026-11-20T08:42:00.143+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "INTAKE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 1
+      },
+      {
+        "ts": "2026-11-20T08:42:00.144+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "run.started",
+        "node": "INTAKE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "case_id": "FIN-001"
+        },
+        "event_id": 2
+      },
+      {
+        "ts": "2026-11-20T08:42:00.146+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "INTAKE",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "payload": {},
+        "event_id": 3
+      },
+      {
+        "ts": "2026-11-20T08:42:00.147+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 4
+      },
+      {
+        "ts": "2026-11-20T08:42:00.148+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-001"
+        },
+        "event_id": 5
+      },
+      {
+        "ts": "2026-11-20T08:42:00.149+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-005§2@v2.8",
+            "FIN-POL-012§3@v3.5",
+            "FIN-POL-011§2@v2.7",
+            "FIN-POL-001§5@v3.2",
+            "FIN-POL-001§2@v3.2"
+          ],
+          "query_label": "C1",
+          "retrieval_id": "run-809b228e4e97-r-01",
+          "untrusted_chunk_ids": []
+        },
+        "event_id": 6
+      },
+      {
+        "ts": "2026-11-20T08:42:00.151+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-002"
+        },
+        "event_id": 7
+      },
+      {
+        "ts": "2026-11-20T08:42:00.152+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-005§2@v2.8",
+            "FIN-POL-005§1@v2.8",
+            "ADV-001§0@v1.0",
+            "FIN-POL-006§2@v3.0",
+            "FIN-POL-007§1@v1.9"
+          ],
+          "query_label": "C2",
+          "retrieval_id": "run-809b228e4e97-r-02",
+          "untrusted_chunk_ids": [
+            "ADV-001§0@v1.0"
+          ]
+        },
+        "event_id": 8
+      },
+      {
+        "ts": "2026-11-20T08:42:00.154+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-003"
+        },
+        "event_id": 9
+      },
+      {
+        "ts": "2026-11-20T08:42:00.154+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-004§2@v5.1",
+            "FIN-POL-004§3@v5.1",
+            "FIN-POL-003§3@v4.0",
+            "FIN-POL-004§1@v5.1",
+            "ADV-001§0@v1.0"
+          ],
+          "query_label": "C3",
+          "retrieval_id": "run-809b228e4e97-r-03",
+          "untrusted_chunk_ids": [
+            "ADV-001§0@v1.0"
+          ]
+        },
+        "event_id": 10
+      },
+      {
+        "ts": "2026-11-20T08:42:00.156+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-004"
+        },
+        "event_id": 11
+      },
+      {
+        "ts": "2026-11-20T08:42:00.157+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-004§4@v5.1",
+            "FIN-POL-004§1@v5.1",
+            "FIN-POL-001§5@v3.2",
+            "FIN-POL-007§1@v1.9",
+            "FIN-POL-001§3@v3.2"
+          ],
+          "query_label": "C3-STATUS",
+          "retrieval_id": "run-809b228e4e97-r-04",
+          "untrusted_chunk_ids": []
+        },
+        "event_id": 12
+      },
+      {
+        "ts": "2026-11-20T08:42:00.159+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-005"
+        },
+        "event_id": 13
+      },
+      {
+        "ts": "2026-11-20T08:42:00.159+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-002§1@v2.4",
+            "FIN-POL-011§2@v2.7",
+            "FIN-POL-001§5@v3.2",
+            "FIN-POL-005§1@v2.8",
+            "FIN-POL-002§2@v2.4"
+          ],
+          "query_label": "C4",
+          "retrieval_id": "run-809b228e4e97-r-05",
+          "untrusted_chunk_ids": []
+        },
+        "event_id": 14
+      },
+      {
+        "ts": "2026-11-20T08:42:00.162+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-006"
+        },
+        "event_id": 15
+      },
+      {
+        "ts": "2026-11-20T08:42:00.163+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-003§4@v4.0",
+            "FIN-POL-002§3@v2.4",
+            "FIN-POL-003§1@v4.0",
+            "FIN-POL-011§3@v2.7",
+            "FIN-POL-003§5@v4.0"
+          ],
+          "query_label": "C5",
+          "retrieval_id": "run-809b228e4e97-r-06",
+          "untrusted_chunk_ids": []
+        },
+        "event_id": 16
+      },
+      {
+        "ts": "2026-11-20T08:42:00.164+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-007"
+        },
+        "event_id": 17
+      },
+      {
+        "ts": "2026-11-20T08:42:00.165+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-003§2@v4.0",
+            "FIN-POL-012§3@v3.5",
+            "FIN-POL-011§2@v2.7",
+            "FIN-POL-008§5@v2.1",
+            "ADV-001§0@v1.0"
+          ],
+          "query_label": "C5-LIMITS",
+          "retrieval_id": "run-809b228e4e97-r-07",
+          "untrusted_chunk_ids": [
+            "ADV-001§0@v1.0"
+          ]
+        },
+        "event_id": 18
+      },
+      {
+        "ts": "2026-11-20T08:42:00.166+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "tool": "retrieve_finance_documents",
+          "tool_call_id": "run-809b228e4e97-tc-008"
+        },
+        "event_id": 19
+      },
+      {
+        "ts": "2026-11-20T08:42:00.167+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "retrieval.performed",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "chunk_ids": [
+            "FIN-POL-005§3@v2.8",
+            "ADV-001§0@v1.0",
+            "FIN-POL-001§1@v3.2",
+            "FIN-POL-008§5@v2.1",
+            "FIN-POL-005§4@v2.8"
+          ],
+          "query_label": "C6",
+          "retrieval_id": "run-809b228e4e97-r-08",
+          "untrusted_chunk_ids": [
+            "ADV-001§0@v1.0"
+          ]
+        },
+        "event_id": 20
+      },
+      {
+        "ts": "2026-11-20T08:42:00.169+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "RETRIEVE",
+        "outcome": "ok",
+        "duration_ms": 21,
+        "payload": {},
+        "event_id": 21
+      },
+      {
+        "ts": "2026-11-20T08:42:00.171+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 22
+      },
+      {
+        "ts": "2026-11-20T08:42:00.173+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {
+          "attempt": 1,
+          "tool": "get_vendor_record",
+          "tool_call_id": "run-809b228e4e97-tc-009"
+        },
+        "event_id": 23
+      },
+      {
+        "ts": "2026-11-20T08:42:00.177+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {
+          "attempt": 1,
+          "tool": "check_invoice_history",
+          "tool_call_id": "run-809b228e4e97-tc-010"
+        },
+        "event_id": 24
+      },
+      {
+        "ts": "2026-11-20T08:42:00.179+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {
+          "attempt": 1,
+          "tool": "get_purchase_order",
+          "tool_call_id": "run-809b228e4e97-tc-011"
+        },
+        "event_id": 25
+      },
+      {
+        "ts": "2026-11-20T08:42:00.181+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "GATHER",
+        "outcome": "ok",
+        "duration_ms": 9,
+        "payload": {},
+        "event_id": 26
+      },
+      {
+        "ts": "2026-11-20T08:42:00.183+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 27
+      },
+      {
+        "ts": "2026-11-20T08:42:00.201+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C1",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 28
+      },
+      {
+        "ts": "2026-11-20T08:42:00.201+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C2",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 29
+      },
+      {
+        "ts": "2026-11-20T08:42:00.203+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C3",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 30
+      },
+      {
+        "ts": "2026-11-20T08:42:00.204+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C4",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 31
+      },
+      {
+        "ts": "2026-11-20T08:42:00.205+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C5",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "PASS"
+        },
+        "event_id": 32
+      },
+      {
+        "ts": "2026-11-20T08:42:00.206+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "control.evaluated",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "control_id": "C6",
+          "model_indicators": null,
+          "outcome_floor": "APPROVE_FOR_POSTING",
+          "status": "NOT_APPLICABLE"
+        },
+        "event_id": 33
+      },
+      {
+        "ts": "2026-11-20T08:42:00.207+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "RECONCILE",
+        "outcome": "ok",
+        "duration_ms": 7,
+        "payload": {},
+        "event_id": 34
+      },
+      {
+        "ts": "2026-11-20T08:42:00.208+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "ASSESS",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 35
+      },
+      {
+        "ts": "2026-11-20T08:42:00.210+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "model.call",
+        "node": "ASSESS",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "payload": {
+          "attempt": 1,
+          "input_tokens": 0,
+          "model_call_id": "run-809b228e4e97-mc-001",
+          "output_tokens": 0,
+          "parse_ok": true,
+          "prompt_sha256": "5201c9807ce2c28c21d77cd3e27e53275fac62ea8c004e03657efc2e11c4c546"
+        },
+        "event_id": 36
+      },
+      {
+        "ts": "2026-11-20T08:42:00.212+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "ASSESS",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "payload": {},
+        "event_id": 37
+      },
+      {
+        "ts": "2026-11-20T08:42:00.213+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "DECIDE",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 38
+      },
+      {
+        "ts": "2026-11-20T08:42:00.233+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "DECIDE",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "payload": {},
+        "event_id": 39
+      },
+      {
+        "ts": "2026-11-20T08:42:00.234+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "REQUEST_APPROVAL",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 40
+      },
+      {
+        "ts": "2026-11-20T08:42:00.235+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "approval.requested",
+        "node": "REQUEST_APPROVAL",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "approval_id": "apr-6ae6d047795f",
+          "decision_fingerprint": "0336c973682684d92c9f99a1b9f6873ed93b8054fd1b1b200497cd3d6aa2608a"
+        },
+        "event_id": 41
+      },
+      {
+        "ts": "2026-11-20T08:42:00.238+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "REQUEST_APPROVAL",
+        "outcome": "ok",
+        "duration_ms": 3,
+        "payload": {},
+        "event_id": 42
+      },
+      {
+        "ts": "2026-11-20T08:42:00.251+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "approval.granted",
+        "node": "APPROVAL",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "approval_id": "apr-6ae6d047795f",
+          "approver_id": "A-CCM-01",
+          "grant_id": "grant-40302fe3814d469d",
+          "verdict": "approve"
+        },
+        "event_id": 43
+      },
+      {
+        "ts": "2026-11-20T08:42:00.257+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "VERIFY_GRANT",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 44
+      },
+      {
+        "ts": "2026-11-20T08:42:00.259+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "VERIFY_GRANT",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {},
+        "event_id": 45
+      },
+      {
+        "ts": "2026-11-20T08:42:00.260+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "SUBMIT",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 46
+      },
+      {
+        "ts": "2026-11-20T08:42:00.261+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "decision.recorded",
+        "node": "SUBMIT",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "decision": "POST_FOR_PAYMENT",
+          "decision_id": "dec-fae1b59ed104",
+          "idempotency_key": "dd3eeabbc51c082c42c6a199decc300d28616a43ba6b29c5677e146af5c3d960",
+          "ledger_ref": "L-9c74338ca1cf"
+        },
+        "event_id": 47
+      },
+      {
+        "ts": "2026-11-20T08:42:00.263+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "tool.attempt",
+        "node": "SUBMIT",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {
+          "attempt": 1,
+          "tool": "submit_finance_decision",
+          "tool_call_id": "run-809b228e4e97-tc-012"
+        },
+        "event_id": 48
+      },
+      {
+        "ts": "2026-11-20T08:42:00.265+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "SUBMIT",
+        "outcome": "ok",
+        "duration_ms": 4,
+        "payload": {},
+        "event_id": 49
+      },
+      {
+        "ts": "2026-11-20T08:42:00.266+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.entered",
+        "node": "PERSIST",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {},
+        "event_id": 50
+      },
+      {
+        "ts": "2026-11-20T08:42:00.268+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "node.exited",
+        "node": "PERSIST",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "payload": {},
+        "event_id": 51
+      },
+      {
+        "ts": "2026-11-20T08:42:00.278+00:00",
+        "run_id": "run-809b228e4e97",
+        "type": "run.completed",
+        "node": "END",
+        "outcome": "ok",
+        "duration_ms": null,
+        "payload": {
+          "decision": "POST_FOR_PAYMENT",
+          "outcome": "APPROVE_FOR_POSTING",
+          "status": "COMPLETED"
+        },
+        "event_id": 52
+      }
+    ],
+    "timeline": [
+      {
+        "ts": "2026-11-20T08:42:00.143+00:00",
+        "node": "INTAKE",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.144+00:00",
+        "node": "INTAKE",
+        "type": "run.started",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "case_id=FIN-001"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.146+00:00",
+        "node": "INTAKE",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.147+00:00",
+        "node": "RETRIEVE",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.148+00:00",
+        "node": "RETRIEVE",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, tool=retrieve_finance_documents, tool_call_id=run-809b228e4e97-tc-001"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.149+00:00",
+        "node": "RETRIEVE",
+        "type": "retrieval.performed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "query_label=C1, retrieval_id=run-809b228e4e97-r-01"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.151+00:00",
+        "node": "RETRIEVE",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, tool=retrieve_finance_documents, tool_call_id=run-809b228e4e97-tc-002"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.152+00:00",
+        "node": "RETRIEVE",
+        "type": "retrieval.performed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "query_label=C2, retrieval_id=run-809b228e4e97-r-02"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.154+00:00",
+        "node": "RETRIEVE",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, tool=retrieve_finance_documents, tool_call_id=run-809b228e4e97-tc-003"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.154+00:00",
+        "node": "RETRIEVE",
+        "type": "retrieval.performed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "query_label=C3, retrieval_id=run-809b228e4e97-r-03"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.156+00:00",
+        "node": "RETRIEVE",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, tool=retrieve_finance_documents, tool_call_id=run-809b228e4e97-tc-004"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.157+00:00",
+        "node": "RETRIEVE",
+        "type": "retrieval.performed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "query_label=C3-STATUS, retrieval_id=run-809b228e4e97-r-04"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.159+00:00",
+        "node": "RETRIEVE",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, tool=retrieve_finance_documents, tool_call_id=run-809b228e4e97-tc-005"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.159+00:00",
+        "node": "RETRIEVE",
+        "type": "retrieval.performed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "query_label=C4, retrieval_id=run-809b228e4e97-r-05"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.162+00:00",
+        "node": "RETRIEVE",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, tool=retrieve_finance_documents, tool_call_id=run-809b228e4e97-tc-006"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.163+00:00",
+        "node": "RETRIEVE",
+        "type": "retrieval.performed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "query_label=C5, retrieval_id=run-809b228e4e97-r-06"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.164+00:00",
+        "node": "RETRIEVE",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, tool=retrieve_finance_documents, tool_call_id=run-809b228e4e97-tc-007"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.165+00:00",
+        "node": "RETRIEVE",
+        "type": "retrieval.performed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "query_label=C5-LIMITS, retrieval_id=run-809b228e4e97-r-07"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.166+00:00",
+        "node": "RETRIEVE",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, tool=retrieve_finance_documents, tool_call_id=run-809b228e4e97-tc-008"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.167+00:00",
+        "node": "RETRIEVE",
+        "type": "retrieval.performed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "query_label=C6, retrieval_id=run-809b228e4e97-r-08"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.169+00:00",
+        "node": "RETRIEVE",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 21,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.171+00:00",
+        "node": "GATHER",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.173+00:00",
+        "node": "GATHER",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "detail": "attempt=1, tool=get_vendor_record, tool_call_id=run-809b228e4e97-tc-009"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.177+00:00",
+        "node": "GATHER",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "detail": "attempt=1, tool=check_invoice_history, tool_call_id=run-809b228e4e97-tc-010"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.179+00:00",
+        "node": "GATHER",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "detail": "attempt=1, tool=get_purchase_order, tool_call_id=run-809b228e4e97-tc-011"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.181+00:00",
+        "node": "GATHER",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 9,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.183+00:00",
+        "node": "RECONCILE",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.201+00:00",
+        "node": "RECONCILE",
+        "type": "control.evaluated",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "control_id=C1, model_indicators=None, outcome_floor=APPROVE_FOR_POSTING, status=PASS"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.201+00:00",
+        "node": "RECONCILE",
+        "type": "control.evaluated",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "control_id=C2, model_indicators=None, outcome_floor=APPROVE_FOR_POSTING, status=PASS"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.203+00:00",
+        "node": "RECONCILE",
+        "type": "control.evaluated",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "control_id=C3, model_indicators=None, outcome_floor=APPROVE_FOR_POSTING, status=PASS"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.204+00:00",
+        "node": "RECONCILE",
+        "type": "control.evaluated",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "control_id=C4, model_indicators=None, outcome_floor=APPROVE_FOR_POSTING, status=PASS"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.205+00:00",
+        "node": "RECONCILE",
+        "type": "control.evaluated",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "control_id=C5, model_indicators=None, outcome_floor=APPROVE_FOR_POSTING, status=PASS"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.206+00:00",
+        "node": "RECONCILE",
+        "type": "control.evaluated",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "control_id=C6, model_indicators=None, outcome_floor=APPROVE_FOR_POSTING, status=NOT_APPLICABLE"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.207+00:00",
+        "node": "RECONCILE",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 7,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.208+00:00",
+        "node": "ASSESS",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.210+00:00",
+        "node": "ASSESS",
+        "type": "model.call",
+        "outcome": "ok",
+        "duration_ms": 0,
+        "detail": "attempt=1, input_tokens=0, model_call_id=run-809b228e4e97-mc-001, output_tokens=0, parse_ok=True, prompt_sha256=5201c9807ce2c28c21d77cd3e27e53275fac62ea8c004e03657efc2e11c4c546"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.212+00:00",
+        "node": "ASSESS",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.213+00:00",
+        "node": "DECIDE",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.233+00:00",
+        "node": "DECIDE",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 2,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.234+00:00",
+        "node": "REQUEST_APPROVAL",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.235+00:00",
+        "node": "REQUEST_APPROVAL",
+        "type": "approval.requested",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "approval_id=apr-6ae6d047795f, decision_fingerprint=0336c973682684d92c9f99a1b9f6873ed93b8054fd1b1b200497cd3d6aa2608a"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.238+00:00",
+        "node": "REQUEST_APPROVAL",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 3,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.251+00:00",
+        "node": "APPROVAL",
+        "type": "approval.granted",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "approval_id=apr-6ae6d047795f, approver_id=A-CCM-01, grant_id=grant-40302fe3814d469d, verdict=approve"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.257+00:00",
+        "node": "VERIFY_GRANT",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.259+00:00",
+        "node": "VERIFY_GRANT",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.260+00:00",
+        "node": "SUBMIT",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.261+00:00",
+        "node": "SUBMIT",
+        "type": "decision.recorded",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "decision=POST_FOR_PAYMENT, decision_id=dec-fae1b59ed104, idempotency_key=dd3eeabbc51c082c42c6a199decc300d28616a43ba6b29c5677e146af5c3d960, ledger_ref=L-9c74338ca1cf"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.263+00:00",
+        "node": "SUBMIT",
+        "type": "tool.attempt",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "detail": "attempt=1, tool=submit_finance_decision, tool_call_id=run-809b228e4e97-tc-012"
+      },
+      {
+        "ts": "2026-11-20T08:42:00.265+00:00",
+        "node": "SUBMIT",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 4,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.266+00:00",
+        "node": "PERSIST",
+        "type": "node.entered",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.268+00:00",
+        "node": "PERSIST",
+        "type": "node.exited",
+        "outcome": "ok",
+        "duration_ms": 1,
+        "detail": ""
+      },
+      {
+        "ts": "2026-11-20T08:42:00.278+00:00",
+        "node": "END",
+        "type": "run.completed",
+        "outcome": "ok",
+        "duration_ms": null,
+        "detail": "decision=POST_FOR_PAYMENT, outcome=APPROVE_FOR_POSTING, status=COMPLETED"
+      }
+    ]
+  }
+}
