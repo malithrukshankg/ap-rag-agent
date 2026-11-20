@@ -201,11 +201,17 @@ If the URL does not respond, the instance has been redeployed (its public IP cha
 
 1. Open <http://13.210.183.195:8000/docs>.
 2. **Evaluation report.** Expand `POST /evals` → *Try it out* → *Execute*. This runs FIN-001…005 against Claude on a throwaway database and returns pass/fail per case plus the metrics. It takes a few minutes, because it makes one model call per case.
-3. **A single run.** Expand `POST /runs` → *Try it out*. Paste `{"case": <the "case" object from fixtures/cases/FIN-001.json>}` as the body and execute. The response shows `status: AWAITING_APPROVAL`, the recommendation, the controls, the calculations and a `decision_fingerprint`.
-4. **Approve.** Expand `POST /runs/{run_id}/approval`. Enter the `run_id` and send `{"verdict": "approve", "approver_id": "A-CCM-01", "decision_fingerprint": "<from step 3>"}`. Execute it **twice**: both responses are identical, and only one decision exists.
+3. **A single run.** Expand `POST /runs` → *Try it out*. **Replace the whole pre-filled body**: copy the ready-made FIN-001 request from [docs/api.md](docs/api.md#post-runs-start-a-run), or paste `{"case": <the "case" object from fixtures/cases/FIN-001.json>}`. Then execute. The response shows `status: AWAITING_APPROVAL`, the recommendation, the controls, the calculations and a `decision_fingerprint`.
+
+   > **Ignore Swagger's pre-filled example body.** Swagger builds it from the schema, and it is misleading in two ways:
+   > - It includes a `simulation` block (`faults`, `scripted_model`, `additionalProp1` …). That block is an optional **SIMULATED test hook**: leave it out. Only FIN-004 uses it, to fake a PO timeout. `scripted_model` is for offline testing and is ignored on this instance, which uses the real model.
+   > - It shows `notes`, attachment `text` and line `description` as `{"text": …, "origin": …}` objects. Send them as **plain strings**. The `origin` label is added internally to mark the text as untrusted.
+   >
+   > Use the samples instead: [run request](docs/api.md#post-runs-start-a-run) · [approval request](docs/api.md#post-runsrun_idapproval-approve-or-reject) · [where to get the decision fingerprint](docs/api.md#the-decision-fingerprint) · [approval responses](docs/api.md#responses).
+4. **Approve.** Expand `POST /runs/{run_id}/approval`. Enter the `run_id` and send `{"verdict": "approve", "approver_id": "A-CCM-01", "decision_fingerprint": "<from step 3>"}` ([sample and field notes](docs/api.md#post-runsrun_idapproval-approve-or-reject); the fingerprint is `result.decision_fingerprint` in the step 3 response, [details](docs/api.md#the-decision-fingerprint)). Execute it **twice**: both responses are identical, and only one decision exists.
 5. **Inspect.** `GET /runs/{run_id}` with `timeline=true` shows the status, the typed result and the full audit trail.
 
-Try FIN-003 (the poisoned attachment) the same way. It completes as `ESCALATE_CONTROL_REVIEW` → `HOLD`, without any approval request. FIN-004 needs `simulation.faults` to simulate the PO timeout, so send the whole fixture shape: `{"case": …, "simulation": {"faults": …}}`. Approver ids that fail a check, for example `A-INACTIVE` or `A-CCM-EXP`, return HTTP 409, and the run stays pending.
+Try FIN-003 (the poisoned attachment; case in [fixtures/cases/FIN-003.json](fixtures/cases/FIN-003.json)) the same way. It completes as `ESCALATE_CONTROL_REVIEW` → `HOLD`, without any approval request. FIN-004 ([fixtures/cases/FIN-004.json](fixtures/cases/FIN-004.json)) needs `simulation.faults` to simulate the PO timeout, so send `{"case": …, "simulation": {"faults": …}}` ([the `faults` snippet](docs/api.md#post-runs-start-a-run)). Approver ids that fail a check, for example `A-INACTIVE` or `A-CCM-EXP`, return HTTP 409, and the run stays pending.
 
 ### Option B: from a terminal
 

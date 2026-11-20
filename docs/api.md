@@ -2,9 +2,13 @@
 
 Request and response formats for the four operations (brief §2). The live OpenAPI schema is served at `/docs`. The endpoint summary and a FIN-001 walkthrough are in the [README](../README.md#using-the-api).
 
+> **Using Swagger UI (`/docs`)?** Replace its pre-filled request body with an example from this page: the [run request](#post-runs-start-a-run) or the [approval request](#post-runsrun_idapproval-approve-or-reject), which needs the [decision fingerprint](#the-decision-fingerprint). Each `case` is also ready-made in [fixtures/cases/](../fixtures/cases/) (FIN-001 to FIN-005). Swagger generates its body from the schema, and it misleads in two ways:
+> - It adds a `simulation` block full of placeholders (`additionalProp1`, `scripted_model`). That block is an optional SIMULATED test hook. Leave it out unless you are reproducing FIN-004's timeout ([below](#post-runs-start-a-run)).
+> - It shows free-text fields (`notes`, attachment `text`, line `description`) as `{"text", "origin"}` objects. Send plain strings instead; the server attaches the untrusted-origin label itself.
+
 ## `POST /runs`: start a run
 
-The body is a `case` and an optional `simulation` block:
+The body is a `case`, plus an optional `simulation` block that a normal run leaves out:
 
 ```json
 {
@@ -27,8 +31,7 @@ The body is a `case` and an optional `simulation` block:
     ],
     "notes": "optional free text",
     "attachments": [{"name": "remittance.txt", "text": "optional free text"}]
-  },
-  "simulation": {"faults": {}, "scripted_model": []}
+  }
 }
 ```
 
@@ -36,7 +39,9 @@ The body is a `case` and an optional `simulation` block:
 - **Optional:** `tax_amount`, `po_ref`, `lines`, `notes`, `attachments`.
 - Send amounts as strings. They are parsed as decimals, never floats.
 - `notes`, `attachments` and line descriptions are untrusted case text. They are evidence, never instructions.
-- `simulation` is a **SIMULATED** test hook and can be omitted. It carries fault injection (for example FIN-004's PO timeouts) and the scripted model's completions. The scripted completions are ignored when the anthropic adapter is configured.
+- `simulation` is a **SIMULATED** test hook. For a normal run, omit it and send just `{"case": {…}}`. It has two parts:
+  - **`faults`** fakes tool failures, keyed by tool name, with one outcome per attempt (`timeout`, `transient` or `ok`). It's only needed for FIN-004: `"simulation": {"faults": {"get_purchase_order": ["timeout", "timeout", "timeout", "timeout"]}}`.
+  - **`scripted_model`** holds canned model replies for offline testing with the `scripted` adapter. It is ignored when the server uses the real model, as the deployed instance does.
 - The fixture vendors and POs are in `fixtures/systems/`, and each `fixtures/cases/FIN-00x.json` has a ready-made `case`.
 
 The reply is `201` with the run view: `run_id`, `status`, `current_node`, `budget`, `result` and `audit_events`.
