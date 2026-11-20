@@ -19,7 +19,7 @@ The design principle is **code decides, the model describes**. The model writes 
 
 ## Environment choice
 
-The primary environment is **local**: the reviewer path needs no API key, no cloud account and no services. SQLite holds the index, run state and audit log; one process serves the API. A Dockerfile reproduces that in a container. An optional **AWS** deployment (EC2 + EBS + ECR, Terraform) shows how the same container is hosted, with secrets in SSM and the API restricted to one IP address. SQLite is a deliberate choice: the brief accepts simple local persistence that demonstrates restart/resume and idempotency (§8). It is also why the app runs as a single uvicorn worker (one writer).
+The primary environment is **local**: the reviewer path needs no API key, no cloud account and no services. SQLite holds the index, run state and audit log; one process serves the API. A Dockerfile reproduces that in a container. An optional **AWS** deployment (EC2 + EBS + ECR, Terraform) shows how the same container is hosted, with secrets in SSM. A shared instance is [already deployed for testers](#test-on-aws). SQLite is a deliberate choice: the brief accepts simple local persistence that demonstrates restart/resume and idempotency (§8). It is also why the app runs as a single uvicorn worker (one writer).
 
 ## Run it locally
 
@@ -183,7 +183,52 @@ The `POST /evals` report gives pass/fail per case plus these metrics: outcome ac
 
 ## Test on AWS
 
-This is optional: it deploys the same container to one EC2 instance in your AWS account. It is real infrastructure and **costs about US$25/month while it exists**, so destroy it when you are done (step 5). [deploy/README.md](deploy/README.md) has the full detail and the security posture.
+A deployed instance is already running. **Testers do not need an AWS account, a key or a local install**: a browser, or curl, is enough.
+
+| | |
+|---|---|
+| Base URL | **<http://13.210.183.195:8000>** |
+| Swagger UI | <http://13.210.183.195:8000/docs> |
+| Mode | **Live**: real Claude (`claude-opus-5-5`). Vendor, PO, history, FX and the ledger are SIMULATED fixtures; nothing can move money. |
+| Hosting | AWS ap-southeast-2: one EC2 instance running the container, with an encrypted EBS volume at `/data` for the SQLite run state |
+| Access | Open to any address. **There is no login**: approver identity is asserted in the request, as documented (resolved ambiguity #6). |
+
+If the URL does not respond, the instance has been redeployed (its public IP changes) or torn down: ask the author for the current address.
+
+### Option A: in the browser (Swagger UI)
+
+1. Open <http://13.210.183.195:8000/docs>.
+2. **Evaluation report.** Expand `POST /evals` → *Try it out* → *Execute*. This runs FIN-001…005 against Claude on a throwaway database and returns pass/fail per case plus the metrics. It takes a few minutes, because it makes one model call per case.
+3. **A single run.** Expand `POST /runs` → *Try it out*. Paste `{"case": <the "case" object from fixtures/cases/FIN-001.json>}` as the body and execute. The response shows `status: AWAITING_APPROVAL`, the recommendation, the controls, the calculations and a `decision_fingerprint`.
+4. **Approve.** Expand `POST /runs/{run_id}/approval`. Enter the `run_id` and send `{"verdict": "approve", "approver_id": "A-CCM-01", "decision_fingerprint": "<from step 3>"}`. Execute it **twice**: both responses are identical, and only one decision exists.
+5. **Inspect.** `GET /runs/{run_id}` with `timeline=true` shows the status, the typed result and the full audit trail.
+
+Try FIN-003 (the poisoned attachment) the same way. It completes as `ESCALATE_CONTROL_REVIEW` → `HOLD`, without any approval request. FIN-004 needs `simulation.faults` to simulate the PO timeout, so send the whole fixture shape: `{"case": …, "simulation": {"faults": …}}`. Approver ids that fail a check, for example `A-INACTIVE` or `A-CCM-EXP`, return HTTP 409, and the run stays pending.
+
+### Option B: from a terminal
+
+From a clone of this repo (bash with `jq`):
+
+```bash
+API=http://13.210.183.195:8000
+curl -s -X POST $API/evals | jq '{passed, cases: [.cases[] | {case_id, passed}]}'
+```
+
+The FIN-001 walkthrough in [Using the API](#using-the-api) works unchanged with `API` set to this URL. PowerShell, without jq:
+
+```powershell
+$API = "http://13.210.183.195:8000"
+$case = (Get-Content fixtures/cases/FIN-001.json -Raw | ConvertFrom-Json).case
+$run = Invoke-RestMethod -Method Post "$API/runs" -ContentType "application/json" -Body (@{case=$case} | ConvertTo-Json -Depth 10)
+$run.status; $run.result.recommendation.outcome            # AWAITING_APPROVAL, APPROVE_FOR_POSTING
+$body = @{verdict="approve"; approver_id="A-CCM-01"; decision_fingerprint=$run.result.decision_fingerprint} | ConvertTo-Json
+1..2 | ForEach-Object { Invoke-RestMethod -Method Post "$API/runs/$($run.run_id)/approval" -ContentType "application/json" -Body $body | ConvertTo-Json -Compress }
+(Invoke-RestMethod "$API/runs/$($run.run_id)").status       # COMPLETED
+```
+
+### Deploying your own copy (owner only)
+
+The steps below recreate or update the instance. They are not needed for testing. It is real infrastructure and **costs about US$25/month while it exists**, so destroy it when you are done (step 5). [deploy/README.md](deploy/README.md) has the full detail and the security posture.
 
 **1. Prerequisites.** You need:
 - an AWS account, with an AWS CLI v2 profile allowed to create EC2, EBS, ECR, IAM roles and SSM parameters (`aws configure --profile <name>`);
@@ -201,13 +246,14 @@ It stores them in SSM Parameter Store as encrypted SecureStrings. Terraform neve
 **3. Deploy** (from the repo root, in bash):
 
 ```bash
-AWS_PROFILE=<name> deploy/scripts/deploy.sh                          # live mode (real Claude)
-AWS_PROFILE=<name> MODEL_ADAPTER=scripted deploy/scripts/deploy.sh   # scripted mode: no key, no model cost
+AWS_PROFILE=<name> deploy/scripts/deploy.sh                                # live mode, your IP only
+AWS_PROFILE=<name> ALLOWED_CIDR=0.0.0.0/0 deploy/scripts/deploy.sh         # the shared tester instance: open to all
+AWS_PROFILE=<name> MODEL_ADAPTER=scripted deploy/scripts/deploy.sh         # scripted mode: no key, no model cost
 ```
 
 Optional overrides:
 - `AWS_REGION`, default `ap-southeast-2`;
-- `ALLOWED_CIDR`, default *your current public IP*/32. The API has no authentication, so it is only ever opened to one address.
+- `ALLOWED_CIDR`, default *your current public IP*/32. `0.0.0.0/0` is an explicit opt-in, and the script warns when you use it. The API has no authentication, so anyone can then start runs and, in live mode, spend your Anthropic key. Set a spend limit in the Anthropic console first.
 - `TRACING_ENABLED=true|false`.
 
 The script provisions the resources, builds and pushes the image, starts the service, and waits until it answers. Re-run it to roll out a change.
@@ -219,8 +265,8 @@ API=$(terraform -chdir=deploy/terraform output -raw api_url)        # http://<pu
 curl -s -X POST $API/evals | jq '{passed, cases: [.cases[] | {case_id, passed}]}'   # all five cases
 ```
 
-- **Interactive.** Open `$API/docs` in a browser on the allowed IP. The FIN-001 walkthrough in [Using the API](#using-the-api) works unchanged with `API` set to the deployed URL.
-- **Infrastructure and logs.** Verify the instance, the encrypted data volume at `/data` and the one-IP security group with the read-only commands in [deploy/README.md](deploy/README.md#verify-the-deployed-setup-aws-cli). Read logs over SSM, with no SSH: `aws ssm start-session --target $(terraform -chdir=deploy/terraform output -raw instance_id)`, then `sudo tail -f /data/logs/ap.jsonl`.
+- **Interactive.** Open `$API/docs` in a browser from an allowed address. The FIN-001 walkthrough in [Using the API](#using-the-api) works unchanged with `API` set to the deployed URL.
+- **Infrastructure and logs.** Verify the instance, the encrypted data volume at `/data` and the security group with the read-only commands in [deploy/README.md](deploy/README.md#verify-the-deployed-setup-aws-cli). Read logs over SSM, with no SSH: `aws ssm start-session --target $(terraform -chdir=deploy/terraform output -raw instance_id)`, then `sudo tail -f /data/logs/ap.jsonl`.
 - **Restart/resume on real infrastructure.** Start FIN-001 so it stops at `AWAITING_APPROVAL`. Restart the service with `sudo systemctl restart ap-agent` in the SSM shell, then send the approval. The run resumes from the EBS-backed database and posts exactly once.
 
 **5. Clean up:**
@@ -333,7 +379,7 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
 
 ## Known limitations
 
-- **No authentication.** The API trusts the caller's `approver_id`. On AWS it is reachable from one IP address only.
+- **No authentication.** The API trusts the caller's `approver_id`. The shared AWS instance is deliberately open to any address so testers can reach it. Anyone with the URL can therefore start runs, approve simulated postings and spend model credit. Nothing can move real money, and production would put OIDC behind an ALB with TLS. Deployments default to the deployer's IP only.
 - **Single instance.** SQLite allows one writer, so one uvicorn worker and no horizontal scaling.
 - **Foreign-currency postings fail closed.** The approval amount is in invoice currency, but approver limits are in AUD, so a non-AUD posting fails the authority check.
 - **The case-scoped idempotency key also blocks a legitimate corrected resubmission** of the same invoice reference.
