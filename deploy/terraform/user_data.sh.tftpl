@@ -1,0 +1,91 @@
+#!/bin/bash
+# First-boot setup (architecture §12): mount the EBS data volume at /data, install Docker, and run
+# the app as a systemd service that fetches its secrets from SSM on every start.
+# Rendered by Terraform templatefile(): $${...} below is a literal bash expansion.
+set -euo pipefail
+exec > >(tee -a /var/log/ap-agent-bootstrap.log) 2>&1
+
+dnf install -y docker
+systemctl enable --now docker
+
+# --- Data volume ---------------------------------------------------------------------------
+# On Nitro instances the attachment's /dev/sdf appears as an NVMe device; find it by volume ID.
+# The attachment is created after the instance, so wait for it.
+VOL_ID="${volume_id}"
+DEV="/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_$${VOL_ID//-/}"
+for _ in $(seq 1 90); do
+  [ -e "$DEV" ] && break
+  sleep 5
+done
+[ -e "$DEV" ] || { echo "data volume $VOL_ID never attached" >&2; exit 1; }
+
+# Format only a blank volume: a re-attached volume keeps its run state.
+if ! blkid "$DEV" > /dev/null 2>&1; then
+  mkfs.xfs "$DEV"
+fi
+mkdir -p /data
+UUID="$(blkid -s UUID -o value "$DEV")"
+grep -q "$UUID" /etc/fstab || echo "UUID=$UUID /data xfs defaults,nofail 0 2" >> /etc/fstab
+systemctl daemon-reload
+mount -a
+mkdir -p /data/logs
+chown -R 10001:10001 /data   # container user (Dockerfile)
+
+# --- Service ---------------------------------------------------------------------------------
+cat > /usr/local/bin/ap-agent-prepare <<'PREPARE'
+#!/bin/bash
+# Runs before each container start: pull the image and write secrets to /run (tmpfs, never
+# persisted to disk, root-only). Secrets are passed as values, never echoed or logged.
+set -euo pipefail
+REGION="${region}"
+aws ecr get-login-password --region "$REGION" \
+  | docker login --username AWS --password-stdin "${registry}" > /dev/null
+docker pull "${image_uri}"
+
+get_param() {
+  aws ssm get-parameter --region "$REGION" --with-decryption --name "$1" \
+    --query Parameter.Value --output text
+}
+
+umask 077
+TMP="$(mktemp /run/ap-agent.env.XXXXXX)"
+{
+  echo "AP_MODEL__ADAPTER=${model_adapter}"
+  echo "AP_PAYMENT_HMAC_KEY=$(get_param "${hmac_key_param}")"
+  if [ "${model_adapter}" = "anthropic" ]; then
+    echo "ANTHROPIC_API_KEY=$(get_param "${anthropic_key_param}")"
+  fi
+} > "$TMP"
+mv "$TMP" /run/ap-agent.env
+PREPARE
+chmod 700 /usr/local/bin/ap-agent-prepare
+
+cat > /etc/systemd/system/ap-agent.service <<'UNIT'
+[Unit]
+Description=ap-rag-agent API (single worker, SQLite on /data)
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+RequiresMountsFor=/data
+
+[Service]
+Restart=always
+RestartSec=15
+TimeoutStartSec=300
+ExecStartPre=-/usr/bin/docker rm -f ap-agent
+ExecStartPre=/usr/local/bin/ap-agent-prepare
+ExecStart=/usr/bin/docker run --rm --name ap-agent \
+  --env-file /run/ap-agent.env \
+  -v /data:/data \
+  -p 8000:8000 \
+  --log-opt max-size=10m --log-opt max-file=3 \
+  ${image_uri}
+ExecStop=/usr/bin/docker stop -t 30 ap-agent
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl daemon-reload
+# Until the first image is pushed, the pull fails and systemd retries every 15 s.
+systemctl enable --now ap-agent.service

@@ -104,7 +104,7 @@ Config sources: `config/app.yaml` (runtime), `config/policy_params.yaml` (policy
 | Store / index | SQLite WAL, FTS5/BM25 |
 | Logs | structlog JSON |
 | CLI | `ap ingest` only |
-| Deploy | AWS EC2 + Docker + EBS at `/data`; index baked into image |
+| Deploy | AWS EC2 + Docker (ECR) + EBS at `/data`, provisioned by Terraform (`deploy/`); corpus baked into image |
 
 ### 0.4 Code layout: one package per plane (our decision)
 
@@ -138,7 +138,6 @@ Rules:
 | Langfuse | Optional; end-of-day only if ahead (§13). |
 | Postgres / pgvector | SQLite meets §8 "simple local persistence"; Postgres is the scale path (§13). |
 | sqlite-vec / fastembed | 16 documents; dense retrieval doesn't change recall at this size (§3). |
-| Terraform | §6 permits CLI commands + screenshots for a single instance. |
 | CI | Out of timebox; `make test` is the reviewer path. |
 | Alembic | Schema created at startup; no migrations needed for a fresh DB. |
 | tenacity | Bounded retry is assessed (§4, §9), so it is hand-written and visible. |
@@ -680,10 +679,13 @@ FIN-005 is a genuinely concurrent double callback via httpx: one decision, ident
 | Path | Detail |
 |---|---|
 | Local (reviewer path) | Clone, `make test`. No key, no cloud, no services. Dockerfile provided. |
-| AWS | EC2 + Docker; EBS volume mounted at `/data` holds the SQLite file; RAG index baked into the image at build time (`ap ingest` in the Docker build). |
-| Topology | Single instance by design: SQLite permits one writer and the idempotency guarantees rely on it. `uvicorn --workers 1`. |
-| Artefacts | AWS CLI commands, screenshots, cost/cleanup notes (§6 permits these instead of IaC). |
-| Cleanup | **The EBS volume is NOT deleted with the instance.** Cleanup deletes it explicitly. |
+| AWS | EC2 (Amazon Linux 2023, t3.small) + Docker, image in ECR; separate encrypted EBS volume mounted at `/data` holds the SQLite file and JSON logs. The corpus is baked into the image and `ap ingest` runs in the Docker build to fail fast on a bad corpus. The index shares its SQLite file with run state, so the app rebuilds it into `/data/ap.db` at startup, as it does locally. |
+| Topology | Single instance by design: SQLite permits one writer and the idempotency guarantees rely on it. `uvicorn --workers 1`. Default VPC, no load balancer. |
+| Trust boundaries | API port 8000 open to one CIDR only (the deployer's IP): the API has no authentication (resolved ambiguity #6). No SSH; shell via SSM Session Manager. IMDSv2 with hop limit 1, so the container cannot reach instance credentials. Instance role: pull one ECR repo and read two SSM parameters. |
+| Secrets | `ANTHROPIC_API_KEY` and `AP_PAYMENT_HMAC_KEY` are SSM SecureStrings written by `deploy/scripts/deploy.sh`, never by Terraform, so state holds no secrets. A systemd pre-start hook fetches them into `/run` (tmpfs, root-only) on each start. |
+| Artefacts | Terraform in `deploy/terraform/`, `Dockerfile`, `deploy/scripts/deploy.sh` (secrets, apply, build/push, restart, health check) and `destroy.sh`. Changed from "CLI commands + screenshots" at the user's request; local state, since there is one operator. |
+| Cleanup | `deploy/scripts/destroy.sh` runs `terraform destroy`, which **deletes the EBS volume and all run state**, the ECR repo and its images, then deletes the SSM parameters. |
+| Cost (ap-southeast-2, approx.) | t3.small ≈ US$19/month, public IPv4 ≈ US$3.6/month, 25 GB gp3 ≈ US$2.4/month, ECR negligible: about US$25/month while running, plus Anthropic API usage per run. |
 
 ---
 

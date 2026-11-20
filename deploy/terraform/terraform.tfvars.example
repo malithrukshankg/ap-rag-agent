@@ -1,0 +1,7 @@
+# Example only (deploy/scripts/deploy.sh passes these as -var flags). No secrets here: the
+# Anthropic key and HMAC key live in SSM Parameter Store, written by deploy.sh.
+aws_profile   = "default"
+region        = "ap-southeast-2"
+allowed_cidr  = "203.0.113.10/32" # your public IP
+instance_type = "t3.small"
+model_adapter = "anthropic"       # or "scripted": no key, no network
