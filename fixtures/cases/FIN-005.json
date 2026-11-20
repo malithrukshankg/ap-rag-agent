@@ -36,6 +36,7 @@
     "recommendation": "APPROVE_FOR_POSTING",
     "approval_requested": true,
     "final_decision": "POST_FOR_PAYMENT",
+    "golden_doc_ids": ["FIN-POL-001", "FIN-POL-002", "FIN-POL-003", "FIN-POL-004", "FIN-POL-005"],
     "duplicate_callbacks": 2
   }
 }

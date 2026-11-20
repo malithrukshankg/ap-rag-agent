@@ -47,6 +47,7 @@
   "expected": {
     "recommendation": "ESCALATE_CONTROL_REVIEW",
     "approval_requested": false,
-    "final_decision": "HOLD"
+    "final_decision": "HOLD",
+    "golden_doc_ids": ["FIN-POL-004", "FIN-POL-005", "ADV-001"]
   }
 }

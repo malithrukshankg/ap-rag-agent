@@ -17,6 +17,8 @@ class ExpectedOutcome(Strict):
     approval_requested: bool
     final_decision: DecisionCode | None
     duplicate_callbacks: int = Field(default=0, ge=0)
+    # Documents retrieval must surface for this case (recall@5, architecture §11).
+    golden_doc_ids: list[str] = Field(default_factory=list)
 
 
 class CaseFixture(Strict):

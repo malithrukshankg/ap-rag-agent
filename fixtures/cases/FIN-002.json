@@ -32,6 +32,7 @@
   "expected": {
     "recommendation": "REJECT_DUPLICATE",
     "approval_requested": false,
-    "final_decision": "HOLD"
+    "final_decision": "HOLD",
+    "golden_doc_ids": ["FIN-POL-005", "FIN-POL-001"]
   }
 }
