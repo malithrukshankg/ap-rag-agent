@@ -567,6 +567,7 @@ class Confidence(BaseModel): level: Literal["LOW", "MEDIUM", "HIGH"]; basis: lis
 class Recommendation(BaseModel):
     outcome: RecommendationCode; exception_category: ExceptionCategory | None
     next_action: str; escalation_target: str | None; confidence: Confidence
+    reasons: list[str]  # one line per FAIL/INDETERMINATE control, plus any model raise; built in code
 class Unknown(BaseModel): what: str; why: str; impact: str
 class Inference(BaseModel): text: str; origin: Literal["rule", "model"]; citations: list[Citation]
 

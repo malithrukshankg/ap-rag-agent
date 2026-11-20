@@ -68,6 +68,7 @@ def test_emit_writes_audit_row_and_json_log_with_run_id(store: SqliteStore, tmp_
         "control_id": "C1",
         "status": "PASS",
         "outcome_floor": "APPROVE_FOR_POSTING",
+        "model_indicators": None,  # set only when C6 is re-run in DECIDE
     }
     assert rows[1].duration_ms == 3
 

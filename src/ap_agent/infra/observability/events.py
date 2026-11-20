@@ -126,6 +126,8 @@ class ControlEvaluated(EventPayload):
     control_id: ControlId
     status: ControlStatus
     outcome_floor: RecommendationCode
+    # Set only when C6 is re-run in DECIDE: how many verified model indicators triggered it.
+    model_indicators: int | None = None
 
 
 class ApprovalRequested(EventPayload):

@@ -78,6 +78,7 @@ def test_result_is_typed_grounded_and_versioned(make_orchestrator: OrchestratorF
     assert r["applied_policy_versions"]["FIN-POL-003"] == "4.0"  # never the superseded v1
     assert "FIN-POL-003-OLD" not in r["applied_policy_versions"]
     assert r["recommendation"]["confidence"]["level"] == "HIGH"
+    assert r["recommendation"]["reasons"] == []  # nothing to explain on a clean approval
 
 
 def test_fin_003_injection_never_reaches_authority(make_orchestrator: OrchestratorFactory) -> None:
@@ -97,6 +98,17 @@ def test_fin_003_injection_never_reaches_authority(make_orchestrator: Orchestrat
         and e["payload"]["control_id"] == "C6"
         for e in view.audit_events
     )
+
+
+def test_hold_states_its_reason(make_orchestrator: OrchestratorFactory) -> None:
+    o = make_orchestrator()
+    view = run_case(o, CASES["FIN-002"])
+    final = o.get_run(view.run_id).result
+    assert final is not None
+    reasons = final["recommendation"]["reasons"]
+    assert reasons and reasons[0].startswith("C2 FAIL")
+    detail = next(a for a in final["actions_taken"] if a["action"] == "decision_recorded")
+    assert detail["detail"].startswith("HOLD recorded") and "because C2 FAIL" in detail["detail"]
 
 
 def test_fin_004_retries_then_exposes_missing_evidence(

@@ -32,6 +32,9 @@ class Recommendation(Strict):
     next_action: str
     escalation_target: str | None = None
     confidence: Confidence
+    # Why the outcome is what it is: one line per driving control, built in code from the
+    # control results. Empty when the outcome is APPROVE_FOR_POSTING.
+    reasons: list[str] = Field(default_factory=list)
 
 
 class SourcedFact(Strict):

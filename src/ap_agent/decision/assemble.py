@@ -138,6 +138,22 @@ def _unknowns(
     return out
 
 
+def _reasons(results: Sequence[ControlResult], aggregate: Aggregate) -> list[str]:
+    """Every control that pushed the outcome above APPROVE, plus a model raise if any.
+
+    Lists all non-passing controls, not only `aggregate.drivers`: a lower-floor control is
+    still a reason a human must clear before the invoice can be paid.
+    """
+    out = [
+        f"{r.control_id.value} {r.status.value} (floor {r.outcome_floor.value}): {r.observed}"
+        for r in results
+        if r.status in (ControlStatus.FAIL, ControlStatus.INDETERMINATE)
+    ]
+    if aggregate.model_raised_outcome:
+        out.append(f"model assessment raised the outcome to {aggregate.outcome.value}")
+    return out
+
+
 def applied_policy_versions(results: Sequence[ControlResult]) -> dict[str, str]:
     return {c.doc_id: c.version for r in results for c in r.citations if c.trust is Trust.TRUSTED}
 
@@ -166,6 +182,7 @@ def build_final_result(
             next_action=route.next_action,
             escalation_target=aggregate.escalation_target,
             confidence=confidence,
+            reasons=_reasons(results, aggregate),
         ),
         sourced_facts=_sourced_facts(ctx),
         calculations=list(calculations),

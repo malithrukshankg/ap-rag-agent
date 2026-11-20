@@ -159,12 +159,11 @@ class Base:
         if not outcome.ok or outcome.output is None:
             raise SubmitFailed(outcome.error or "no result")
         r = outcome.output
-        result = with_action(
-            self._result(),
-            "decision_recorded",
-            f"{r.decision.value} recorded ({r.status.value}); ledger {r.ledger_ref}",
-            r.decision_id,
-        )
+        current = self._result()
+        detail = f"{r.decision.value} recorded ({r.status.value}); ledger {r.ledger_ref}"
+        if current.recommendation.reasons:
+            detail += "; because " + "; ".join(current.recommendation.reasons)
+        result = with_action(current, "decision_recorded", detail, r.decision_id)
         self._save_result(result.model_copy(update={"status": RunStatus.COMPLETED}))
         return {
             "status": RunStatus.COMPLETED.value,
@@ -315,14 +314,23 @@ class StartNodes(Base):
         )
         return {}
 
-    def _save_control(self, ctx: ControlContext, r: ControlResult, node: str) -> None:
+    def _save_control(
+        self,
+        ctx: ControlContext,
+        r: ControlResult,
+        node: str,
+        model_indicators: int | None = None,
+    ) -> None:
         calcs = [c for c in ctx.calc.records if c.id in r.calculation_ids]
         self.store.control_results.save(
             StoredControlResult(run_id=self.run_id, result=r, calculations=calcs)
         )
         self.events.emit(
             ControlEvaluated(
-                control_id=r.control_id, status=r.status, outcome_floor=r.outcome_floor
+                control_id=r.control_id,
+                status=r.status,
+                outcome_floor=r.outcome_floor,
+                model_indicators=model_indicators,
             ),
             node=node,
         )
@@ -355,7 +363,7 @@ class StartNodes(Base):
             ctx = dataclasses.replace(ctx, model_indicators=frozenset(verified.risk_indicators))
             c6 = c6_risk.check(ctx)
             results = [c6 if r.control_id is c6.control_id else r for r in results]
-            self._save_control(ctx, c6, "DECIDE")
+            self._save_control(ctx, c6, "DECIDE", len(verified.risk_indicators))
         available = assessment.status is AssessmentStatus.OK and assessment.assessment is not None
         proposal = (
             assessment.assessment.proposed_outcome
