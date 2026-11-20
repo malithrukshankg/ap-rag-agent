@@ -4,7 +4,7 @@ A small, production-minded accounts-payable agent, built for a take-home assessm
 
 1. retrieves the relevant finance policy through RAG, with citations;
 2. gathers vendor, purchase-order, invoice-history and FX evidence through typed tools;
-3. reconciles the evidence deterministically in code (controls C1–C6, `Decimal` arithmetic);
+3. reconciles the evidence deterministically in code (controls C1–C6, `Decimal` arithmetic; see [docs/controls.md](docs/controls.md));
 4. recommends an outcome with cited evidence, calculations, unknowns and a confidence level;
 5. **stops for a human approver** before any payment is posted.
 
@@ -13,6 +13,7 @@ The design principle is **code decides, the model describes**. The model writes 
 | Document | What it covers |
 |---|---|
 | [docs/design-note.md](docs/design-note.md) | The design note (~2 pages): orchestration, RAG, trust boundaries, contracts, persistence, failure handling, production changes |
+| [docs/controls.md](docs/controls.md) | What each control C1–C6 checks, how results combine into a recommendation, and the Decimal arithmetic rules, with a worked FIN-001 example |
 | [docs/architecture.md](docs/architecture.md) | The full design: diagram (§0.1), component/configuration manifest (§0.2), every decision traced to the brief |
 | [docs/transcripts/](docs/transcripts/) | Sample runs: [FIN-001](docs/transcripts/FIN-001.md) approve → post, and [FIN-003](docs/transcripts/FIN-003.md) poisoned document → escalate |
 | [deploy/README.md](deploy/README.md) | AWS deployment (Terraform), security posture, cost and cleanup |
