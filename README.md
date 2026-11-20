@@ -228,56 +228,9 @@ $body = @{verdict="approve"; approver_id="A-CCM-01"; decision_fingerprint=$run.r
 (Invoke-RestMethod "$API/runs/$($run.run_id)").status       # COMPLETED
 ```
 
-### Deploying your own copy (owner only)
+### How it is deployed
 
-The steps below recreate or update the instance. They are not needed for testing. It is real infrastructure and **costs about US$25/month while it exists**, so destroy it when you are done (step 5). [deploy/README.md](deploy/README.md) has the full detail and the security posture.
-
-**1. Prerequisites.** You need:
-- an AWS account, with an AWS CLI v2 profile allowed to create EC2, EBS, ECR, IAM roles and SSM parameters (`aws configure --profile <name>`);
-- Terraform ≥ 1.6;
-- Docker running;
-- bash (Git Bash on Windows), curl and jq;
-- optionally the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html), for a shell on the instance.
-
-**2. Secrets.** The deploy script reads secrets from your shell or from the same local `.env`:
-- `ANTHROPIC_API_KEY`, unless you deploy in scripted mode;
-- the Langfuse keys, if `AP_TRACING__ENABLED=true`.
-
-It stores them in SSM Parameter Store as encrypted SecureStrings. Terraform never sees them, and they are never written to the instance's disk. You don't set the HMAC key: it is generated once, in SSM.
-
-**3. Deploy** (from the repo root, in bash):
-
-```bash
-AWS_PROFILE=<name> deploy/scripts/deploy.sh                                # live mode, your IP only
-AWS_PROFILE=<name> ALLOWED_CIDR=0.0.0.0/0 deploy/scripts/deploy.sh         # the shared tester instance: open to all
-AWS_PROFILE=<name> MODEL_ADAPTER=scripted deploy/scripts/deploy.sh         # scripted mode: no key, no model cost
-```
-
-Optional overrides:
-- `AWS_REGION`, default `ap-southeast-2`;
-- `ALLOWED_CIDR`, default *your current public IP*/32. `0.0.0.0/0` is an explicit opt-in, and the script warns when you use it. The API has no authentication, so anyone can then start runs and, in live mode, spend your Anthropic key. Set a spend limit in the Anthropic console first.
-- `TRACING_ENABLED=true|false`.
-
-The script provisions the resources, builds and pushes the image, starts the service, and waits until it answers. Re-run it to roll out a change.
-
-**4. Test the deployment:**
-
-```bash
-API=$(terraform -chdir=deploy/terraform output -raw api_url)        # http://<public-ip>:8000
-curl -s -X POST $API/evals | jq '{passed, cases: [.cases[] | {case_id, passed}]}'   # all five cases
-```
-
-- **Interactive.** Open `$API/docs` in a browser from an allowed address. The FIN-001 walkthrough in [Using the API](#using-the-api) works unchanged with `API` set to the deployed URL.
-- **Infrastructure and logs.** Verify the instance, the encrypted data volume at `/data` and the security group with the read-only commands in [deploy/README.md](deploy/README.md#verify-the-deployed-setup-aws-cli). Read logs over SSM, with no SSH: `aws ssm start-session --target $(terraform -chdir=deploy/terraform output -raw instance_id)`, then `sudo tail -f /data/logs/ap.jsonl`.
-- **Restart/resume on real infrastructure.** Start FIN-001 so it stops at `AWAITING_APPROVAL`. Restart the service with `sudo systemctl restart ap-agent` in the SSM shell, then send the approval. The run resumes from the EBS-backed database and posts exactly once.
-
-**5. Clean up:**
-
-```bash
-AWS_PROFILE=<name> deploy/scripts/destroy.sh
-```
-
-This deletes the instance, the EBS data volume (all run state), the ECR repository and images, the IAM role and the SSM parameters. [deploy/README.md](deploy/README.md#cost-and-cleanup) lists commands to confirm nothing billable remains.
+The deployment is defined as code (Terraform) and rolled out with one script. [deploy/README.md](deploy/README.md) describes the infrastructure, the security posture, and cost and cleanup.
 
 ## Using the API
 
