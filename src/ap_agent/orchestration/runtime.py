@@ -37,7 +37,7 @@ from ap_agent.evidence.tools.retrieve import RetrieveTool
 from ap_agent.evidence.tools.vendor import VendorTool
 from ap_agent.infra.observability.events import RunCompleted, RunFailed
 from ap_agent.infra.observability.logger import RunEventLogger, utc_now_iso
-from ap_agent.infra.observability.tracing import FailSafeTracer, Tracer
+from ap_agent.infra.observability.tracing import FailSafeTracer, RunSegment, Tracer
 from ap_agent.infra.persistence.records import ApprovalRecord, DecisionRecord
 from ap_agent.infra.persistence.sqlite import SqliteStore
 from ap_agent.infra.settings import ConfigError, Settings
@@ -163,6 +163,37 @@ class Orchestrator:
     def _events(self, run_id: str) -> RunEventLogger:
         return RunEventLogger(self.store.audit, run_id, clock=self._clock, tracer=self.tracer)
 
+    def _trace_segment(self, run_id: str) -> None:
+        """Send the run's top-level trace span as it stands now (paused or terminal)."""
+        if not self.tracer.enabled:
+            return
+        run = self.store.runs.get(run_id)
+        if run is None:  # failed before INTAKE persisted the run
+            return
+        req = run.request_redacted
+        recommendation = (run.result or {}).get("recommendation") or {}
+        decision = next(
+            (d for d in self.store.decisions.list_for_case(run.case_id) if d.run_id == run_id),
+            None,
+        )
+        self.tracer.run_segment(
+            RunSegment(
+                run_id=run_id,
+                case_id=run.case_id,
+                vendor_id=str(req.get("vendor_id", "")),
+                invoice_ref=str(req.get("invoice_ref", "")),
+                amount=str(req.get("amount", "")),
+                currency=str(req.get("currency", "")),
+                started_at=run.created_at,
+                ended_at=self._clock(),
+                status=run.status.value,
+                current_node=run.current_node,
+                outcome=recommendation.get("outcome"),
+                decision=decision.decision.value if decision else None,
+                failure_reason=run.failure_reason,
+            )
+        )
+
     def _config(self, run_id: str) -> Any:
         return {"configurable": {"thread_id": run_id}}
 
@@ -249,6 +280,7 @@ class Orchestrator:
         else:
             if state.get("status") == RunStatus.COMPLETED.value:
                 self._complete(run_id, state, events)
+        self._trace_segment(run_id)
         return self.get_run(run_id)
 
     # --- Get run --------------------------------------------------------------------
@@ -328,7 +360,10 @@ class Orchestrator:
             # ledger and decision, or a decision already recorded for the same case by an
             # earlier run (submit then replays it and this run still completes).
             if run.status is RunStatus.AWAITING_APPROVAL:
-                self._resume(run_id, approval, events)
+                try:
+                    self._resume(run_id, approval, events)
+                finally:
+                    self._trace_segment(run_id)
             decision = self.store.decisions.get_by_key(key)
             if decision is None:
                 return ApprovalReply(run_id=run_id, accepted=True, reason="decision pending")
@@ -384,5 +419,6 @@ class Orchestrator:
         for run in self.store.runs.list_by_status(RunStatus.RUNNING):
             events = self._events(run.run_id)
             self._fail(run.run_id, events, "interrupted", None)
+            self._trace_segment(run.run_id)
             failed.append(run.run_id)
         return failed

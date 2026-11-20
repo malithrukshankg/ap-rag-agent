@@ -5,6 +5,8 @@ The system of record stays audit_events and model_calls in SQLite. A tracer rece
 
 - `event` gets the already-persisted AuditEvent. Its payload is an allow-listed model dump
   (events.py), so nothing reaches a tracer that the audit log would not hold.
+- `run_segment` gets the run's state at the end of each graph invocation (paused for
+  approval, or terminal), built from persisted rows. It becomes the trace's top-level span.
 - `generation` gets one model attempt. Whether redacted prompt and completion text go with it
   is the adapter's choice (`tracing.send_prompts`, off by default).
 
@@ -18,9 +20,31 @@ import structlog
 
 from ap_agent.assessment.assess import AttemptRecord
 from ap_agent.infra.persistence.records import AuditEvent
+from ap_agent.kernel.types import Strict
+
+
+class RunSegment(Strict):
+    """The run as it stands at the end of one graph invocation: start (paused for approval,
+    or terminal) or resume. Built from persisted rows; fields are an allow-list."""
+
+    run_id: str
+    case_id: str
+    vendor_id: str
+    invoice_ref: str
+    amount: str
+    currency: str
+    started_at: str  # run created_at (ISO 8601)
+    ended_at: str
+    status: str
+    current_node: str | None
+    outcome: str | None
+    decision: str | None
+    failure_reason: str | None
 
 
 class Tracer(Protocol):
+    def run_segment(self, segment: RunSegment) -> None: ...
+
     def event(self, event: AuditEvent) -> None: ...
 
     def generation(
@@ -32,6 +56,9 @@ class Tracer(Protocol):
 
 class NullTracer:
     """Default: tracing disabled. No network, no dependency loaded."""
+
+    def run_segment(self, segment: RunSegment) -> None:
+        return None
 
     def event(self, event: AuditEvent) -> None:
         return None
@@ -56,6 +83,17 @@ class FailSafeTracer:
     @property
     def inner(self) -> Tracer:
         return self._inner
+
+    @property
+    def enabled(self) -> bool:
+        """False for NullTracer, so callers can skip building trace-only data."""
+        return not isinstance(self._inner, NullTracer)
+
+    def run_segment(self, segment: RunSegment) -> None:
+        try:
+            self._inner.run_segment(segment)
+        except Exception as exc:
+            self._warn("run_segment", exc)
 
     def _warn(self, op: str, exc: Exception) -> None:
         # Exception class only: messages from exporters can echo request bodies.
