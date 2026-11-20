@@ -87,7 +87,8 @@ aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellS
 # --- 5. Health ----------------------------------------------------------------------------------
 log "Waiting for $API_URL (first boot takes 2-4 minutes)"
 for _ in $(seq 1 60); do
-  if curl -fsS -o /dev/null --max-time 5 "$API_URL/openapi.json"; then
+  # Shell redirect, not `curl -o /dev/null`: with MSYS_NO_PATHCONV a native curl can't open it.
+  if curl -fsS --max-time 5 "$API_URL/openapi.json" >/dev/null 2>&1; then
     echo "UP: $API_URL   (Swagger UI: $API_URL/docs)"
     exit 0
   fi
