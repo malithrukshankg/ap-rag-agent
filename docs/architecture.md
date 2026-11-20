@@ -115,7 +115,7 @@ Packages mirror §1's planes, so each trust boundary is a package boundary. Depe
 | `kernel/` | shared kernel | enums (closed vocabularies), `Strict` base, `Money`, `Currency` | nothing |
 | `intake/` | TB1 | `CaseRequest`, `Tainted` | kernel |
 | `evidence/` | evidence plane, TB2 | `rag/`, `tools/` (Tool contract, read tools), `Citation` | kernel, intake |
-| `controls/` | deterministic control core | `calc` (Calculator, Calculation), `ControlResult`, C1–C6, aggregation `policy`, confidence | kernel, intake, evidence |
+| `controls/` | deterministic control core | `calc` (Calculator, Calculation), `ControlResult`, `params` (literal check), C1–C6, `aggregate`, `policy` (severity, O4 cap, O5 `EscalationRule`) | kernel, intake, evidence |
 | `assessment/` | TB3, model boundary | `ModelClient` port, `ModelAssessment` schema, adapters, prompt, citation verifier | kernel, intake, evidence, controls |
 | `decision/` | TB4, decision gate | `routing` (recommendation → decision), approvals, `ApprovalGrant`, fingerprint, `submit_finance_decision`, `FinalResult` | the above + persistence/observability **ports** |
 | `infra/` | adapters | `persistence/` (protocols, records, `sqlite/`), `observability/`, settings | kernel → assessment |
@@ -196,7 +196,7 @@ budget: {max_steps: 25, max_tool_calls: 25, max_model_calls: 10, max_retries_per
 ```
 - Charged on every node transition (steps) and every tool/model **attempt**, retries included.
 - Persisted on the `runs` row, returned by Get run.
-- `max_tool_calls` is 25 not 15 because 8 retrieval queries + 4 evidence tools + FIN-004's 3 retries + submit exceeds 15 (our decision).
+- `max_tool_calls` is 25 not 15 because up to 10 retrieval queries + 4 evidence tools + FIN-004's 3 retries + submit = 18 exceeds 15 (our decision; 10 queries since C3-STATUS and C5-LIMITS were added in P4, §3.4).
 - Per-tool retry counts (§7) are capped by `max_retries_per_call`.
 - Exhaustion → `budget.exhausted` audit event → `FAILED`, no decision written.
 
@@ -291,14 +291,20 @@ FIN-POL-003-OLD: {pinned_version: null, superseded_by: FIN-POL-003, doc_type: po
 | C1 | `invoice mandatory fields required evidence` | always |
 | C2 | `duplicate invoice already paid resubmission` | always |
 | C3 | `vendor bank account change verification` | always |
+| C3-STATUS | `vendor status blocked dormant sanctions review pending verification hold` | always (our decision, P4) |
 | C4 | `three-way match tolerance variance purchase order goods receipt` | `po_present` |
 | C4-NOPO | `emergency non-PO purchase approval requirement` | NOT `po_present` |
 | C4-FX | `foreign currency invoice exchange rate conversion` | `fx_applies` |
 | C5 | `delegated financial authority approval limit threshold` | always |
+| C5-LIMITS | `role maximum approval cost centre manager department director executive director` | always (our decision, P4) |
 | C6 | `fraud indicators urgency bypass supplier instruction` | `has_free_text` |
 | CASE | vendor name + attachment keywords | `has_free_text` |
 
-At most 8 queries per run (C4 and C4-NOPO are mutually exclusive).
+At most 10 queries per run (C4 and C4-NOPO are mutually exclusive).
+
+Why C3-STATUS and C5-LIMITS exist (our decision, P4): the C3 and C5 arms never retrieve FIN-POL-004 §4 (the statuses that must be held) or FIN-POL-003 §2 (the limits table, a markdown table sharing no terms with the C5 query). Under the literal check both controls would be INDETERMINATE on every case and nothing could ever be approved. Each extra arm uses its section's own vocabulary and ranks that section first. Prefixing chunks with document titles was tried and did not fix it.
+
+Literal-check scope (our reading of §4.1 "the chunk it retrieved"): any trusted chunk in the run's merged retrieval set, not only the control's own arm.
 
 Rules:
 - Free text contributes search **terms** only: never filters, never document selection. Terms are plain tokens, each quoted, so FTS5 operators in free text are inert.

@@ -5,9 +5,9 @@ Internal working document. Builds `docs/architecture.md` phase by phase.
 ## Context
 `docs/architecture.md` holds the final design for the take-home AP agent. This plan builds the design within the 8-hour timebox (§8). Phases follow the architecture's "never cut" list, so the approval gate, idempotency, redaction, citations, the superseded filter, budget/retry and restart-resume land before the polish items. Each phase ends green under `make test`.
 
-**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4–P8 pending.
+**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5–P8 pending.
 
-**Open before P4 (found in P2):** the C5 query ("delegated financial authority approval limit threshold") retrieves FIN-POL-003 §1, §3, §4, §5 but never §2, the authority limits table: its text is a markdown table sharing no terms with the query (architecture §3.7 "BM25 doesn't read tables"). Prefixing chunks with the document title was tried and does not fix it. Under the literal check, C5 would be INDETERMINATE on every case. Needs a decision before P4.
+**Resolved in P4:** the C5 limits-table gap found in P2 (and the same gap for C3's FIN-POL-004 §4) is fixed by two always-on query arms, C3-STATUS and C5-LIMITS (architecture §3.4). Confidence moved to `decision/confidence.py` because it returns the `Confidence` type from `decision/`; `EscalationRule` moved to `controls/policy.py` so controls never import infra.
 
 **Open-item resolutions (user-confirmed, recorded in architecture.md §15):**
 - **O1:** a document with no `##` heading becomes one chunk with section number 0.
@@ -30,7 +30,7 @@ src/ap_agent/          # one package per plane, enforced by tests/unit/test_impo
   evidence/          # TB2: citation.py; rag/ (ingest, index, facets, queries);
                      #      tools/ (base, schemas, faults, retrieve, vendor, purchase_order, history, fx)
   controls/          # calc.py, result.py, policy.py, params.py (literal check), c1…c6,
-                     # aggregate.py, confidence.py
+                     # aggregate.py, engine.py (confidence.py is in decision/)
   assessment/        # TB3: client.py (ModelClient), schema.py, adapters/ (anthropic, scripted),
                      #      prompt.py, redaction.py, verify.py (citations), assess.py (repair loop)
   decision/          # TB4: routing.py, grant.py, result.py, fingerprint.py, approvals.py (5 checks),
@@ -83,7 +83,7 @@ tests/ unit/  contract/  scenarios/  live/   (pytest markers: live)
   - FIN-004: a PO timeout ×4 and no receipt.
 - Tests (contract): schemas, timeout→retry→exhaust, transient vs permanent, allow-list enforcement.
 
-### P4: Controls (1.25h)
+### P4: Controls (1.25h) ✅
 - `controls/params.py`: load `policy_params.yaml`. `verify_literal(param, retrieved_chunks)` → INDETERMINATE if the literal is missing. **First grep the corpus for every literal** and store exact strings.
 - C1–C6 per architecture §4.4:
   - C3 uses O3 and compares last4/fingerprint in code.
@@ -92,7 +92,7 @@ tests/ unit/  contract/  scenarios/  live/   (pytest markers: live)
   - C6 uses deterministic indicator patterns over untrusted text.
 - Each control emits code-built citations.
 - `controls/aggregate.py`: precedence, model proposal capped (O4), INDETERMINATE → ≥ HOLD, primary category and target by O5.
-- `controls/confidence.py`: LOW / MEDIUM / HIGH rule.
+- `decision/confidence.py`: LOW / MEDIUM / HIGH rule (lives in decision/: it returns the `Confidence` result type).
 - Tests (unit): each control's PASS, FAIL and INDETERMINATE paths; aggregation table; a model proposal of REJECT_INVALID gets capped; applicability can't be skipped by text.
 
 ### P5: Model boundary (0.75h)
