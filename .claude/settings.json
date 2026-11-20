@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//d/STUFF/JOB_PREP/Monash/finance_rag_corpus/**)"
+      "Read(//d/STUFF/JOB_PREP/Monash/finance_rag_corpus/**)",
+      "Bash(uv run *)"
     ]
   }
 }
