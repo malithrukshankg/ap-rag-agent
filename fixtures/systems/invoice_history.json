@@ -1,0 +1,9 @@
+{
+  "_comment": "SIMULATED AP ledger history used for duplicate detection. Synthetic data.",
+  "records": [
+    {"record_id": "H-0001", "vendor_id": "V-1001", "invoice_ref": "INV-1001-0701", "amount": "2750.00", "currency": "AUD", "invoice_date": "2026-07-01", "po_ref": "PO-0998", "status": "PAID", "paid_at": "2026-07-09T00:00:00Z"},
+    {"record_id": "H-0002", "vendor_id": "V-2002", "invoice_ref": "INV-2002-0803", "amount": "3300.00", "currency": "AUD", "invoice_date": "2026-08-03", "po_ref": "PO-2002", "status": "PAID", "paid_at": "2026-08-11T00:00:00Z"},
+    {"record_id": "H-0003", "vendor_id": "V-3003", "invoice_ref": "INV-3003-0715", "amount": "1980.00", "currency": "AUD", "invoice_date": "2026-07-15", "po_ref": "PO-3001", "status": "PAID", "paid_at": "2026-07-24T00:00:00Z"},
+    {"record_id": "H-0004", "vendor_id": "V-4004", "invoice_ref": "INV-4004-0610", "amount": "880.00", "currency": "AUD", "invoice_date": "2026-06-10", "po_ref": "PO-3990", "status": "PAID", "paid_at": "2026-06-18T00:00:00Z"}
+  ]
+}

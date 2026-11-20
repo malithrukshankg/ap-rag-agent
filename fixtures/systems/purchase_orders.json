@@ -1,0 +1,90 @@
+{
+  "_comment": "SIMULATED purchasing system: purchase orders with lines, PO-level tolerances and goods receipts. Synthetic data.",
+  "purchase_orders": [
+    {
+      "po_ref": "PO-1001",
+      "vendor_id": "V-1001",
+      "currency": "AUD",
+      "requester_id": "u-req-01",
+      "approval_status": "APPROVED",
+      "approved_by": "u-mgr-01",
+      "tolerance": {"absolute": "50.00", "percent": "1"},
+      "permits_conversion": false,
+      "lines": [
+        {"line_no": 1, "description": "Ergonomic office chair", "category": "goods", "quantity": "20", "unit_price": "245.00", "line_value": "4900.00"},
+        {"line_no": 2, "description": "LED desk lamp", "category": "goods", "quantity": "10", "unit_price": "60.00", "line_value": "600.00"}
+      ],
+      "total": "5500.00",
+      "receipts": [
+        {"receipt_id": "GR-1001-1", "line_no": 1, "quantity_received": "20", "received_at": "2026-08-12T10:00:00Z", "receipter_id": "u-rcv-01"},
+        {"receipt_id": "GR-1001-2", "line_no": 2, "quantity_received": "10", "received_at": "2026-08-12T10:05:00Z", "receipter_id": "u-rcv-01"}
+      ]
+    },
+    {
+      "po_ref": "PO-2002",
+      "vendor_id": "V-2002",
+      "currency": "AUD",
+      "requester_id": "u-req-02",
+      "approval_status": "APPROVED",
+      "approved_by": "u-mgr-02",
+      "tolerance": {"absolute": "100.00", "percent": "2"},
+      "permits_conversion": false,
+      "lines": [
+        {"line_no": 1, "description": "Monthly office cleaning, July 2026", "category": "services", "quantity": "1", "unit_price": "3000.00", "line_value": "3000.00"}
+      ],
+      "total": "3000.00",
+      "receipts": [
+        {"receipt_id": "GR-2002-1", "line_no": 1, "quantity_received": "1", "received_at": "2026-08-01T09:00:00Z", "receipter_id": "u-rcv-02"}
+      ]
+    },
+    {
+      "po_ref": "PO-3003",
+      "vendor_id": "V-3003",
+      "currency": "AUD",
+      "requester_id": "u-req-03",
+      "approval_status": "APPROVED",
+      "approved_by": "u-mgr-03",
+      "tolerance": {"absolute": "50.00", "percent": "1"},
+      "permits_conversion": false,
+      "lines": [
+        {"line_no": 1, "description": "Cut-resistant safety gloves (box)", "category": "goods", "quantity": "100", "unit_price": "40.00", "line_value": "4000.00"}
+      ],
+      "total": "4000.00",
+      "receipts": [
+        {"receipt_id": "GR-3003-1", "line_no": 1, "quantity_received": "100", "received_at": "2026-08-18T13:20:00Z", "receipter_id": "u-rcv-03"}
+      ]
+    },
+    {
+      "po_ref": "PO-4004",
+      "vendor_id": "V-4004",
+      "currency": "AUD",
+      "requester_id": "u-req-04",
+      "approval_status": "APPROVED",
+      "approved_by": "u-mgr-04",
+      "tolerance": {"absolute": "50.00", "percent": "1"},
+      "permits_conversion": false,
+      "lines": [
+        {"line_no": 1, "description": "Pallet freight Melbourne to Sydney", "category": "goods", "quantity": "4", "unit_price": "500.00", "line_value": "2000.00"}
+      ],
+      "total": "2000.00",
+      "receipts": []
+    },
+    {
+      "po_ref": "PO-1005",
+      "vendor_id": "V-1001",
+      "currency": "AUD",
+      "requester_id": "u-req-01",
+      "approval_status": "APPROVED",
+      "approved_by": "u-mgr-01",
+      "tolerance": {"absolute": "50.00", "percent": "1"},
+      "permits_conversion": false,
+      "lines": [
+        {"line_no": 1, "description": "Whiteboard 1800x1200", "category": "goods", "quantity": "12", "unit_price": "100.00", "line_value": "1200.00"}
+      ],
+      "total": "1200.00",
+      "receipts": [
+        {"receipt_id": "GR-1005-1", "line_no": 1, "quantity_received": "12", "received_at": "2026-08-28T15:00:00Z", "receipter_id": "u-rcv-01"}
+      ]
+    }
+  ]
+}

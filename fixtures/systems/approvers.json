@@ -1,0 +1,10 @@
+{
+  "_comment": "SIMULATED authority register (RA#6, FIN-POL-003 §4). Synthetic data. Used by the approval checks in P6.",
+  "approvers": [
+    {"approver_id": "A-CCM-01", "name": "Cost Centre Manager (Facilities)", "role": "Cost Centre Manager", "authority_limit": "10000.00", "currency": "AUD", "active": true, "valid_from": "2026-01-01", "valid_to": "2026-12-31"},
+    {"approver_id": "A-DD-01", "name": "Department Director (Operations)", "role": "Department Director", "authority_limit": "50000.00", "currency": "AUD", "active": true, "valid_from": "2026-01-01", "valid_to": "2026-12-31"},
+    {"approver_id": "A-FC-01", "name": "Financial Control approver", "role": "Financial Control", "authority_limit": "250000.00", "currency": "AUD", "active": true, "valid_from": "2026-01-01", "valid_to": "2026-12-31"},
+    {"approver_id": "A-CCM-EXP", "name": "Cost Centre Manager (expired delegation)", "role": "Cost Centre Manager", "authority_limit": "10000.00", "currency": "AUD", "active": true, "valid_from": "2026-01-01", "valid_to": "2026-07-31"},
+    {"approver_id": "A-INACTIVE", "name": "Former Department Director", "role": "Department Director", "authority_limit": "50000.00", "currency": "AUD", "active": false, "valid_from": "2025-01-01", "valid_to": "2026-12-31"}
+  ]
+}

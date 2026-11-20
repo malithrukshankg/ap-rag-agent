@@ -1,0 +1,8 @@
+{
+  "_comment": "SIMULATED corporate daily rates (FIN-POL-009 §2). Synthetic data. rate converts 1 unit of base into quote.",
+  "rates": [
+    {"base": "USD", "quote": "AUD", "rate": "1.5234", "rate_date": "2026-08-15", "source": "Corporate daily rate (simulated treasury feed)"},
+    {"base": "USD", "quote": "AUD", "rate": "1.5180", "rate_date": "2026-09-01", "source": "Corporate daily rate (simulated treasury feed)"},
+    {"base": "EUR", "quote": "AUD", "rate": "1.6512", "rate_date": "2026-08-15", "source": "Corporate daily rate (simulated treasury feed)"}
+  ]
+}

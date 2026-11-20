@@ -1,0 +1,65 @@
+{
+  "_comment": "SIMULATED vendor master. Synthetic data. Full account numbers exist only in this file; get_vendor_record returns last4 + HMAC fingerprint.",
+  "vendors": [
+    {
+      "vendor_id": "V-1001",
+      "legal_name": "Acme Office Supplies Pty Ltd",
+      "status": "ACTIVE",
+      "risk_flags": [],
+      "created_at": "2025-03-10T00:00:00Z",
+      "created_by": "u-vg-01",
+      "updated_at": "2026-06-02T09:15:00Z",
+      "bank": {"bsb": "062-000", "account_number": "10457723", "bank_country": "AU", "changed_at": "2025-03-10T00:00:00Z"}
+    },
+    {
+      "vendor_id": "V-2002",
+      "legal_name": "Coastal Cleaning Services Pty Ltd",
+      "status": "ACTIVE",
+      "risk_flags": [],
+      "created_at": "2024-11-04T00:00:00Z",
+      "created_by": "u-vg-02",
+      "updated_at": "2026-05-20T11:00:00Z",
+      "bank": {"bsb": "033-112", "account_number": "55120938", "bank_country": "AU", "changed_at": "2024-11-04T00:00:00Z"}
+    },
+    {
+      "vendor_id": "V-3003",
+      "legal_name": "Brightline Industrial Supplies Pty Ltd",
+      "status": "ACTIVE",
+      "risk_flags": [],
+      "created_at": "2025-01-22T00:00:00Z",
+      "created_by": "u-vg-01",
+      "updated_at": "2026-04-18T14:30:00Z",
+      "bank": {"bsb": "083-004", "account_number": "30914417", "bank_country": "AU", "changed_at": "2025-11-02T00:00:00Z"}
+    },
+    {
+      "vendor_id": "V-4004",
+      "legal_name": "Southern Freight and Logistics Pty Ltd",
+      "status": "ACTIVE",
+      "risk_flags": [],
+      "created_at": "2023-08-15T00:00:00Z",
+      "created_by": "u-vg-02",
+      "updated_at": "2026-03-01T08:00:00Z",
+      "bank": {"bsb": "012-345", "account_number": "77801265", "bank_country": "AU", "changed_at": "2023-08-15T00:00:00Z"}
+    },
+    {
+      "vendor_id": "V-5005",
+      "legal_name": "Pacific Components Inc",
+      "status": "ACTIVE",
+      "risk_flags": ["OVERSEAS_ACCOUNT"],
+      "created_at": "2026-07-28T00:00:00Z",
+      "created_by": "u-vg-03",
+      "updated_at": "2026-08-10T16:45:00Z",
+      "bank": {"bsb": "026-009", "account_number": "4410098853", "bank_country": "US", "changed_at": "2026-08-10T16:45:00Z"}
+    },
+    {
+      "vendor_id": "V-9009",
+      "legal_name": "Dormant Traders Pty Ltd",
+      "status": "DORMANT",
+      "risk_flags": [],
+      "created_at": "2021-02-01T00:00:00Z",
+      "created_by": "u-vg-02",
+      "updated_at": "2025-01-10T10:00:00Z",
+      "bank": {"bsb": "062-111", "account_number": "90015532", "bank_country": "AU", "changed_at": "2021-02-01T00:00:00Z"}
+    }
+  ]
+}
