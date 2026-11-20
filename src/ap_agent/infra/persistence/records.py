@@ -83,6 +83,8 @@ class ModelCallRecord(Record):
     prompt_redacted: str
     completion_text: str | None
     parse_result: str
+    model_id: str | None = None
+    request_id: str | None = None
     input_tokens: int = 0
     output_tokens: int = 0
     duration_ms: int

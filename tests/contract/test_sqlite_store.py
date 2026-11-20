@@ -172,4 +172,4 @@ def test_run_round_trip_and_status_update(store: SqliteStore) -> None:
 
 def test_schema_is_idempotent(store: SqliteStore) -> None:
     store.db.init_schema()  # second application must not fail or drop data
-    assert store.db.query_one("PRAGMA user_version")[0] == 1  # type: ignore[index]
+    assert store.db.query_one("PRAGMA user_version")[0] == 2  # type: ignore[index]

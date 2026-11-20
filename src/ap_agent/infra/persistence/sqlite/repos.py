@@ -272,8 +272,9 @@ class SqliteModelCallRepository:
     def save(self, record: ModelCallRecord) -> None:
         self._db.execute(
             "INSERT INTO model_calls (model_call_id, run_id, node, attempt, prompt_sha256,"
-            " prompt_redacted, completion_text, parse_result, input_tokens, output_tokens,"
-            " duration_ms, ts) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            " prompt_redacted, completion_text, parse_result, model_id, request_id,"
+            " input_tokens, output_tokens, duration_ms, ts)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 record.model_call_id,
                 record.run_id,
@@ -283,6 +284,8 @@ class SqliteModelCallRepository:
                 record.prompt_redacted,
                 record.completion_text,
                 record.parse_result,
+                record.model_id,
+                record.request_id,
                 record.input_tokens,
                 record.output_tokens,
                 record.duration_ms,

@@ -85,6 +85,8 @@ CREATE TABLE IF NOT EXISTS model_calls (
     prompt_redacted  TEXT NOT NULL,
     completion_text  TEXT,
     parse_result     TEXT NOT NULL,          -- ok | invalid: <summary> | error
+    model_id         TEXT,                   -- model that served it (FIN-POL-010 §4)
+    request_id       TEXT,                   -- provider request id (FIN-POL-010 §4)
     input_tokens     INTEGER NOT NULL DEFAULT 0,
     output_tokens    INTEGER NOT NULL DEFAULT 0,
     duration_ms      INTEGER NOT NULL,
@@ -171,4 +173,5 @@ CREATE TABLE IF NOT EXISTS ingest_meta (
     value  TEXT NOT NULL
 );
 
-PRAGMA user_version = 1;
+-- 2: model_calls gains model_id and request_id. No migrations: delete an older var/ap.db.
+PRAGMA user_version = 2;
