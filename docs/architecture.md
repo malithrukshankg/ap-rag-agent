@@ -714,6 +714,20 @@ FIN-005 is a genuinely concurrent double callback via httpx: one decision, ident
 
 **§10 extensions (two, both falling out of required work):** fault-injection tests; a run timeline rendered from `audit_events`. Langfuse only if ahead at the end.
 
+How every §10 item stands (our decision; the README's "Optional extensions" section says the same to reviewers):
+
+| §10 item | Status | Claimed as an extension? |
+|---|---|---|
+| Fault-injection tests | Done: per-case fault profiles and crash injection (§7, §9) | **Yes** |
+| Useful run timeline | Done: `?timeline=1` over `audit_events` (§10) | **Yes** |
+| OpenTelemetry-compatible traces | Done: Langfuse adapter emitting OTel spans, off by default (below) | No: an addition, observe-only |
+| Configurable budgets / token accounting | Budgets are required by §4 (§2.2). Tokens are recorded per model call; no cost and no token budget. | No: required work |
+| Second model adapter / framework comparison | `scripted` adapter is stable-tier test infrastructure; no framework comparison | No: required by §7 test separation |
+| Parallel read-only tools | Not done: GATHER is sequential | n/a |
+| Property-based tests | Not done | n/a |
+
+None of these is a safety or reliability control; the controls in §1 and §6 stand without them (§10: "optional work does not compensate for missing safety or reliability controls").
+
 **Langfuse tracing (added):** a `Tracer` port (`infra/observability/tracing.py`) with one adapter (`langfuse_tracer.py`, the only file importing the SDK). It is observe-only and off by default (`tracing.enabled`). Each audit event is forwarded *after* its `audit_events` row is written, and each model attempt *after* its `model_calls` row, so SQLite remains the system of record (§2.6) and Langfuse is a viewer. One trace per run, shaped as a tree: a root `run` span (input: case id, vendor id, invoice ref; output: status, outcome, decision), one span per graph node from `node.entered` to `node.exited`, and each event under the node it belongs to. The adapter emits plain OpenTelemetry spans so it can set ids, parents and start/end times itself. The trace id and root span id are derived from `run_id`, so a run resumed after approval, even after a restart, joins the same trace under the same root. The Orchestrator sends the root at the end of every graph invocation (`run_segment`), and Langfuse keeps the latest copy per span id, so the root moves from AWAITING_APPROVAL to COMPLETED. This upsert behaviour was verified against Langfuse Cloud. Payloads are the same allow-listed event models as the audit log (§4 safe logging). Prompt and completion text, and the invoice amount in the root input, are withheld unless `tracing.send_prompts` is true. Even then only the redacted prompt is sent, never account numbers (Resolved ambiguity #3), but invoice amounts and vendor names leaving the host is opt-in (FIN-POL-010 §2). The Orchestrator wraps every tracer in `FailSafeTracer`: a tracer error is logged by class and swallowed, so tracing can never change, delay or fail a run (tested with a tracer that always raises). Counted against §10 as an addition beyond the two extensions above; it adds no control and does not compensate for any.
 
 **Cut order:** docker-compose → REVALIDATE node → live-tier polish → timeline → Langfuse.

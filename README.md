@@ -376,6 +376,26 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
 - **The simulated approver delegations end on 2026-12-31.** The approval check uses today's date (FIN-POL-003 §4), so after that date an approval in a live run or in `POST /evals` fails with an expired delegation. The stable tests pin the date. To keep demoing after 2026, extend `valid_to` in `fixtures/systems/approvers.json`.
 - **Interrupted runs are not resumed.** A crash mid-run marks it `FAILED(interrupted)` and the caller re-runs it. Only paused runs resume.
 
+## Optional extensions (§10)
+
+The brief allows "at most one or two" optional extensions, and only after the required workflow is solid. Optional work "does not compensate for missing safety or reliability controls". We declare **two**. Both came out of required work, so neither replaced required work:
+
+| Declared extension | What it is | Why it came almost for free | Proven by |
+|---|---|---|---|
+| **Run timeline** | `GET /runs/{run_id}?timeline=1` lists every audit event in order: node, event type, outcome, duration and a one-line detail. See the [transcripts](docs/transcripts/). | It renders the audit log that §4 already requires; no new data is collected. | `test_start_get_and_timeline` |
+| **Fault-injection tests** | Each case can carry a fault profile (`timeout`, `transient`, `ok`), consumed one attempt at a time. A test hook also simulates a process crash between the ledger write and the decision row. | §4 requires timeout, transient-failure and restart handling; injected faults are how that handling is proven. FIN-004's PO timeouts use the same mechanism. | `test_injected_timeouts_exhaust_retries_like_fin_004`, `test_crash_between_ledger_and_decision_posts_exactly_once` |
+
+Three other §10 items overlap with the build. They are **not claimed as extensions**:
+- **Configurable budgets.** The step, tool-call, model-call and retry limits in `config/app.yaml` are the bounded loop that §4 requires, so they are core work. Token counts are recorded for every model call (`model_calls`). There is **no cost calculation in dollars and no token budget**.
+- **A second model adapter.** `scripted` sits beside `anthropic` behind the `ModelClient` interface. It is test infrastructure for the keyless stable tier (§7), not a second provider. There is **no framework-free vs LangGraph comparison**.
+- **OpenTelemetry-compatible traces.** Optional Langfuse tracing emits standard OpenTelemetry spans: one trace per run and one span per graph node. It was added last and is off by default. It only observes: SQLite stays the system of record, and a tracer error can never change, delay or fail a run. It is counted as an addition beyond the two declared extensions, and it adds no control ([architecture §13](docs/architecture.md)).
+
+**Not implemented:**
+- parallel read-only tool execution: GATHER calls its tools in sequence, and retrieval results are merged deterministically;
+- property-based tests: the closest are parametrised tests, such as hostile search strings shown to be inert.
+
+None of the above is relied on as a safety or reliability control. Every control the brief requires stands without them (see the trust-boundary table in [design note §3](docs/design-note.md#3-trust-boundaries)).
+
 ## Unfinished work and deliberate trade-offs (§8)
 
 **Not done (in cut order):**
@@ -392,7 +412,7 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
 - **Templated queries over model-written queries.** Retrieval cannot be steered by injected text.
 - **Hand-written retry over a library (tenacity).** Bounded retry is assessed, so it is visible in `orchestration/tool_runner.py`.
 - **Full prompt capture for every run.** Cheap at five cases; at volume it would be tiered (architecture §9).
-- **Extensions.** A run timeline (`?timeline=1`) and fault-injection tests both fall out of required work. Langfuse tracing was added at the end, off by default and observe-only; it adds no control.
+- **Extensions kept to two.** Only the run timeline and fault-injection tests are declared; see [Optional extensions](#optional-extensions-10). Parallel tool execution and property-based tests were left out in favour of the required controls.
 
 ## AI tool use, time spent, and material not authored (§7, §11)
 
