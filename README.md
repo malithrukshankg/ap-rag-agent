@@ -404,6 +404,8 @@ None of the above is relied on as a safety or reliability control. Every control
 - **Live-tier polish.** The live tests run the five cases against Claude and assert the outcome is *never more permissive* than expected. They are reported, not gating, and there is no multi-run statistics.
 - **AWS screenshots.** The deployment is reproducible from Terraform instead, and the deployed setup can be checked with the AWS CLI commands in [deploy/README.md](deploy/README.md#verify-the-deployed-setup-aws-cli).
 - **CI.** `make test` and `make lint` are the reviewer path.
+- **RAG tuning.** The chunking strategy (one chunk per `##` section, one chunk for documents with no headings) and the retrieval settings (the templated queries, BM25 ranking, the top-k cut-off) are first working choices. I did not tune them, for example by trying other chunk sizes or overlap, or by measuring retrieval quality beyond recall@5 on the five cases (see [Known limitations](#known-limitations)).
+- **Final end-to-end testing.** The automated stable suite passes, but there was no time for a full final round of manual and live testing. The latest changes were not re-checked end to end against the real model and the AWS deployment: the live evals, the approval flows through Swagger, and the restart cases on the instance.
 
 **Deliberate trade-offs:**
 - **SQLite over Postgres.** It meets §8 and makes the idempotency semantics easy to show. Repository protocols are the seam for Postgres, but no second implementation ships.
