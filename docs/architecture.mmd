@@ -1,0 +1,86 @@
+%% Architecture and trust boundaries (brief §6, §7). Source for docs/architecture.svg and .png.
+%% Regenerate:
+%%   npx -y @mermaid-js/mermaid-cli@11.4.2 -i docs/architecture.mmd -o docs/architecture.svg -b white
+%%   npx -y @mermaid-js/mermaid-cli@11.4.2 -i docs/architecture.mmd -o docs/architecture.png -b white -s 2
+%% Zones group components by how far they are trusted. TB1-TB4 mark the data flows that cross
+%% into a more trusted zone, where the receiving side must check or contain the data
+%% (design-note.md §3 lists the threat, control, code and tests for each).
+flowchart TB
+  subgraph Z1["① EXTERNAL · untrusted"]
+    direction LR
+    client(["Caller<br/>HTTP client · approver"])
+    casetext["Invoice request<br/>notes · attachments<br/><i>may contain instructions</i>"]
+  end
+
+  subgraph Z2["② AGENT RUNTIME · trusted code"]
+    direction LR
+    api["<b>API surface</b><br/>FastAPI · uvicorn --workers 1<br/>POST /runs · GET /runs/:id<br/>POST /runs/:id/approval · POST /evals"]
+    runtime["<b>Agent runtime</b> · LangGraph<br/>INTAKE → RETRIEVE → GATHER → RECONCILE<br/>→ ASSESS → DECIDE → REQUEST_APPROVAL ⏸<br/>resume: VERIFY_GRANT → SUBMIT<br/><i>budget: 25 steps · 25 tool · 10 model calls</i>"]
+    db[("<b>Persistence</b> · SQLite WAL /data<br/>runs · audit_events · tool_calls<br/>model_calls · approvals · decisions<br/>LangGraph checkpoints")]
+  end
+
+  subgraph Z3["③ EVIDENCE · untrusted data"]
+    direction TB
+    retr["retrieve_finance_documents<br/><b>REAL</b> · BM25"]
+    idx[("<b>Document store / index</b><br/>SQLite FTS5 · policy registry<br/><i>incl. adversarial ADV-001</i>")]
+    tools["Read tools · <b>SIMULATED</b><br/>vendor · purchase order<br/>invoice history · FX rate"]
+    fix[("fixtures/systems")]
+  end
+
+  subgraph Z4["④ MODEL · advisory only"]
+    model["<b>Model</b> · ModelClient<br/>claude-opus-5-5 or scripted<br/><i>no tool access</i>"]
+  end
+
+  subgraph Z6["⑤ CONTROL CORE · trusted code that decides"]
+    core["<b>Deterministic control core</b><br/>controls C1–C6 · Decimal calculator<br/>citation verifier · aggregation · confidence"]
+  end
+
+  subgraph Z5["⑥ CONSEQUENTIAL · deny-by-default"]
+    direction LR
+    submit["submit_finance_decision<br/><b>SIMULATED</b> sandbox<br/>POST_FOR_PAYMENT · HOLD · REJECTED"]
+    ledger[("sim_ledger<br/>UNIQUE idempotency_key")]
+  end
+
+  client --> casetext
+  casetext == "<b>TB1</b> schema validation<br/>free text tainted" ==> api
+  client == "<b>TB1</b> approval callback<br/>5 approver checks" ==> api
+  api --> runtime
+  runtime --> db
+  runtime -- "templated queries" --> retr
+  retr --> idx
+  runtime -- "only when needed" --> tools
+  tools --> fix
+  runtime -- "redacted evidence in<br/>&lt;untrusted_evidence&gt;" --> model
+  retr & tools == "<b>TB2</b> data, never instructions<br/>trust from provenance" ==> core
+  model == "<b>TB3</b> schema + citation check<br/>can only tighten" ==> core
+  core == "<b>TB4</b> SUBMIT node only<br/>grant must match fingerprint" ==> submit
+  submit --> ledger
+
+  subgraph KEY["Key"]
+    direction TB
+    k1["Red dashed: untrusted input or data"]
+    k2["Amber dashed: advisory, cannot decide"]
+    k3["Green: trusted code"]
+    k4["Blue: consequential, approval-gated"]
+    k5["Thick arrow TBn: trust boundary crossing"]
+  end
+  Z5 ~~~ KEY
+
+  classDef untrusted fill:#fdecea,stroke:#c62828,color:#3b0d0c
+  classDef advisory fill:#fff4e0,stroke:#b26a00,color:#3d2600
+  classDef trusted fill:#e8f5e9,stroke:#2e7d32,color:#0d2e10
+  classDef consequential fill:#e3f2fd,stroke:#1565c0,color:#0b2545
+  classDef key fill:#ffffff,stroke:#616161,stroke-width:2px,color:#212121
+  class client,casetext,retr,idx,tools,fix,k1 untrusted
+  class model,k2 advisory
+  class api,runtime,core,db,k3 trusted
+  class submit,ledger,k4 consequential
+  class k5 key
+
+  style Z1 fill:#fff7f6,stroke:#c62828,stroke-width:2px,stroke-dasharray:6 4
+  style Z3 fill:#fff7f6,stroke:#c62828,stroke-width:2px,stroke-dasharray:6 4
+  style Z4 fill:#fffaf0,stroke:#b26a00,stroke-width:2px,stroke-dasharray:6 4
+  style Z2 fill:#f4fbf4,stroke:#2e7d32,stroke-width:2px
+  style Z6 fill:#f4fbf4,stroke:#2e7d32,stroke-width:2px
+  style Z5 fill:#f2f8fe,stroke:#1565c0,stroke-width:2px
+  style KEY fill:#fafafa,stroke:#9e9e9e

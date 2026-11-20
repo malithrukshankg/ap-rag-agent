@@ -38,14 +38,25 @@ resume:       VERIFY_GRANT → SUBMIT(POST_FOR_PAYMENT | REJECTED) → PERSIST �
 
 ## 3. Trust boundaries
 
-| Boundary | Enforcement |
-|---|---|
-| TB1 caller → orchestration | Strict Pydantic validation (unknown fields rejected). Case notes, attachments and line descriptions are wrapped as `Tainted` text, whose `str()` hides the content. |
-| TB2 tool/retrieval output → anything | Output is data, never instructions. It reaches the model only inside an escaped `<untrusted_evidence>` block with provenance and trust labels. |
-| TB3 model → control core | The output is schema-validated, and every citation is resolved: the chunk must be in this run's retrieval set, the quote must be verbatim and the hash must match. A risk indicator counts only when it quotes the case's own text. Unverifiable claims become unknowns. |
-| TB4 control core → consequential tool | Deny-by-default. `POST_FOR_PAYMENT` needs a single-use grant bound to the decision fingerprint, and the check sits inside the tool. |
+A trust boundary is a point where data passes from a less trusted part of the system into a more trusted one, so the receiving side must check or contain it. The diagram groups components into zones by trust and marks each crossing TB1–TB4. Its source is [architecture.mmd](architecture.mmd).
 
-The model has no tools, so injected text cannot invoke anything. FIN-003 shows the full path: ADV-001 tops the CASE retrieval, C3 catches the claimed account in code (last4 8842 against 4417 on the vendor master), C6 counts four fraud indicators, and the run ends `HOLD` without an approval request ([transcript](transcripts/FIN-003.md)).
+![Architecture and trust boundaries](architecture.png)
+
+| Boundary | What crosses | Threat | Control | Enforced in | Proven by |
+|---|---|---|---|---|---|
+| **TB1** caller → runtime | Invoice request, notes, attachments; approval callbacks | Malformed or hostile input; instructions hidden in case text (FIN-003); an approver without authority | Strict schemas with unknown fields rejected. Free text is wrapped as `Tainted`, whose `str()` hides the content. Five checks on every approver. | [`intake/case.py`](../src/ap_agent/intake/case.py), [`api/schemas.py`](../src/ap_agent/api/schemas.py), [`decision/approvals.py`](../src/ap_agent/decision/approvals.py) | `test_invalid_request_is_rejected_at_tb1`, `test_case_text_is_tainted_at_construction`, `test_tainted_str_hides_content`, `test_each_check_refuses_and_is_audited` |
+| **TB2** evidence → runtime and control core | Retrieved chunks, tool responses | A poisoned or irrelevant document steers the outcome; a superseded policy is applied; search syntax is injected | Trust comes from registry provenance, not content. Superseded versions are removed by a hard filter. Free text becomes quoted search terms. Evidence reaches the model only inside an escaped, labelled `<untrusted_evidence>` block. | [`evidence/rag/index.py`](../src/ap_agent/evidence/rag/index.py), [`assessment/prompt.py`](../src/ap_agent/assessment/prompt.py) | `test_adversarial_attachment_surfaces_via_case_query_as_untrusted`, `test_superseded_authority_policy_never_returned`, `test_fts_operators_in_free_text_are_inert`, `test_untrusted_text_is_delimited_labelled_and_escaped` |
+| **TB3** model → control core | The model's assessment | Hallucinated citations; an untrusted document cited as authority; the model talked into loosening or wrongly escalating the outcome | Schema validation, then two repair attempts, then `UNAVAILABLE`. Each citation must be in this run's retrieval set, verbatim, with a matching hash. Risk indicators must quote the case's own text. The proposal is capped (O4, O8) and can only tighten the outcome. | [`assessment/assess.py`](../src/ap_agent/assessment/assess.py), [`assessment/verify.py`](../src/ap_agent/assessment/verify.py), [`controls/aggregate.py`](../src/ap_agent/controls/aggregate.py) | `test_forged_quote_is_rejected`, `test_chunk_outside_the_retrieval_set_is_rejected`, `test_untrusted_chunk_cannot_be_authority_but_can_be_risk_evidence`, `test_risk_indicators_from_library_chunks_are_not_counted`, `test_o4_model_reject_is_capped_at_hold`, `test_o8_ungrounded_escalation_is_downgraded_to_hold` |
+| **TB4** control core → consequential tool | A finance decision | Payment posted without approval, against a different decision than the one approved, or twice | Deny-by-default. Only the SUBMIT node holds the tool. `POST_FOR_PAYMENT` needs a single-use grant bound to the decision fingerprint, checked inside the tool. Idempotency key plus UNIQUE constraints. | [`decision/submit.py`](../src/ap_agent/decision/submit.py), [`orchestration/tool_registry.py`](../src/ap_agent/orchestration/tool_registry.py) | `test_post_without_a_grant_is_refused`, `test_post_against_a_hold_recommendation_is_refused`, `test_allow_list_denies_by_default`, `test_fin_005_concurrent_double_callback` |
+
+The model has no tools, so injected text cannot invoke anything.
+
+**Worked example (FIN-003).** One hostile input meets every boundary in turn ([transcript](transcripts/FIN-003.md); end-to-end test `test_fin_003_injection_never_reaches_authority`):
+1. **TB1:** the poisoned attachment is accepted only as tainted text.
+2. **TB2:** ADV-001 tops the case-text retrieval but is labelled untrusted.
+3. **Controls:** C3 catches the claimed account in code (last4 8842 against 4417 on the vendor master), and C6 counts four fraud indicators.
+4. **TB3:** the model's indicators count only because they quote the case's own text.
+5. **TB4** is never reached. The run ends `HOLD` with no approval request.
 
 ## 4. Model and tool contracts
 

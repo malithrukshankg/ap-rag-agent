@@ -12,6 +12,8 @@ Internal working document. Decisions here are final; build from them. The short 
 
 ### 0.1 Architecture diagram (§6, §7)
 
+The reviewer-facing diagram is [architecture.mmd](architecture.mmd), exported to [architecture.png](architecture.png) and [architecture.svg](architecture.svg). It groups components into trust zones and marks TB1–TB4 on the crossing data flows; [design-note.md §3](design-note.md#3-trust-boundaries) gives each boundary's threat, control, code and tests. The diagram below is the more detailed internal flow view.
+
 ```mermaid
 flowchart TB
   client(["Client: HTTP API · ap ingest CLI"])

@@ -345,25 +345,17 @@ This deliberately resolves the brief's "return payment details" (§3) against "d
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  C([HTTP client]) -- "TB1 validated · case text tainted" --> G
-  subgraph G[LangGraph: start_run / resume_after_approval]
-    direction LR
-    I[INTAKE] --> R[RETRIEVE] --> GA[GATHER] --> RC[RECONCILE] --> A[ASSESS] --> D[DECIDE]
-  end
-  R --> IDX[(FTS5 index<br/>registry pre-filter)]
-  GA --> T[(SIMULATED tools<br/>vendor · PO · history · FX)]
-  RC & D --> CORE[Controls C1–C6 · Decimal calc<br/>citation verifier · aggregation]
-  A -- "TB2 untrusted_evidence" --> M[ModelClient<br/>anthropic / scripted<br/>no tools]
-  M -- "TB3 schema + citations" --> CORE
-  D -- "APPROVE_FOR_POSTING" --> AP[approval request → pause]
-  D -- "other outcomes" --> S
-  AP -- "approve: grant bound to fingerprint" --> S["submit_finance_decision<br/>TB4 deny-by-default<br/>SIMULATED sim_ledger"]
-  S --> DB[(SQLite WAL: runs · audit_events · decisions<br/>approvals · model_calls · checkpoints)]
-```
+![Architecture and trust boundaries](docs/architecture.png)
 
-The full diagram and the component/configuration manifest (model, agent runtime, document store, persistence, tools, API surface, trust boundaries) are in [architecture.md §0.1–0.2](docs/architecture.md).
+The diagram shows the model, agent runtime, document store and index, persistence, tools and API surface. Components are grouped into **zones by trust**:
+- red dashed: untrusted input and evidence;
+- amber dashed: the model, which is advisory only;
+- green: trusted code;
+- blue: the consequential payment tool.
+
+The thick arrows **TB1–TB4** mark the trust boundaries: each point where data crosses into a more trusted zone and is checked. Source: [docs/architecture.mmd](docs/architecture.mmd), also exported as [SVG](docs/architecture.svg). To re-export after editing, run `npx -y @mermaid-js/mermaid-cli@11.4.2 -i docs/architecture.mmd -o docs/architecture.png -b white -s 2`.
+
+[Design note §3](docs/design-note.md#3-trust-boundaries) has a table giving, for each boundary, the threat, the control, the code that enforces it and the tests that prove it. The full component/configuration manifest is in [architecture.md §0.2](docs/architecture.md).
 
 ## Assumptions
 
@@ -397,7 +389,7 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
 - **docker-compose.** One container needs no orchestration; `docker run` is documented instead.
 - **REVALIDATE node.** FIN-POL-007 §5 wants time-sensitive vendor and delegation data re-checked when a held case resumes. Only approval-paused runs resume here, and the delegation date is re-checked at approval time; a held case is not resumable.
 - **Live-tier polish.** The live tests run the five cases against Claude and assert the outcome is *never more permissive* than expected. They are reported, not gating, and there is no multi-run statistics.
-- **AWS screenshots.** The deployment is reproducible from Terraform instead; the screenshot slots are listed in [deploy/README.md](deploy/README.md#screenshots).
+- **AWS screenshots.** The deployment is reproducible from Terraform instead, and the deployed setup can be checked with the AWS CLI commands in [deploy/README.md](deploy/README.md#verify-the-deployed-setup-aws-cli).
 - **CI.** `make test` and `make lint` are the reviewer path.
 
 **Deliberate trade-offs:**
