@@ -345,17 +345,7 @@ This deliberately resolves the brief's "return payment details" (§3) against "d
 
 ## Architecture
 
-![Architecture and trust boundaries](docs/architecture.png)
-
-The diagram shows the model, agent runtime, document store and index, persistence, tools and API surface. Components are grouped into **zones by trust**:
-- red dashed: untrusted input and evidence;
-- amber dashed: the model, which is advisory only;
-- green: trusted code;
-- blue: the consequential payment tool.
-
-The thick arrows **TB1–TB4** mark the trust boundaries: each point where data crosses into a more trusted zone and is checked. Source: [docs/architecture.mmd](docs/architecture.mmd), also exported as [SVG](docs/architecture.svg). To re-export after editing, run `npx -y @mermaid-js/mermaid-cli@11.4.2 -i docs/architecture.mmd -o docs/architecture.png -b white -s 2`.
-
-[Design note §3](docs/design-note.md#3-trust-boundaries) has a table giving, for each boundary, the threat, the control, the code that enforces it and the tests that prove it. The full component/configuration manifest is in [architecture.md §0.2](docs/architecture.md).
+The architecture diagram is in [docs/architecture.md §0.1](docs/architecture.md#01-architecture-diagram-6-7). It shows the model, agent runtime, document store and index, persistence, tools and API surface, grouped into trust zones, with the trust boundaries TB1–TB4 marked. The component/configuration manifest follows it in §0.2. For each boundary's threat, control, code and tests, see [design note §3](docs/design-note.md#3-trust-boundaries).
 
 ## Assumptions
 
