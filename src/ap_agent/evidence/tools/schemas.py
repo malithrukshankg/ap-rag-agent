@@ -132,6 +132,20 @@ class FxRate(Strict):
     source: str
 
 
+# --- approver authority register (SIMULATED; used by the approval gate, RA#6) ----------
+
+
+class Approver(Strict):
+    approver_id: str
+    name: str
+    role: str
+    authority_limit: Money
+    currency: Currency
+    active: bool
+    valid_from: date
+    valid_to: date
+
+
 # --- retrieve_finance_documents -------------------------------------------------------
 
 

@@ -12,7 +12,13 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal
 
-from ap_agent.evidence.tools.schemas import GoodsReceipt, POLine, POTolerance, VendorStatus
+from ap_agent.evidence.tools.schemas import (
+    Approver,
+    GoodsReceipt,
+    POLine,
+    POTolerance,
+    VendorStatus,
+)
 from ap_agent.kernel.types import Currency, Money, Strict
 
 
@@ -101,3 +107,8 @@ class FixtureBackend:
     def fx_rates(self) -> list[FixtureRate]:
         rows = _load(self._dir / "fx_rates.json", "rates")
         return [FixtureRate.model_validate(r) for r in rows]
+
+    @cached_property
+    def approvers(self) -> dict[str, Approver]:
+        rows = _load(self._dir / "approvers.json", "approvers")
+        return {a.approver_id: a for a in (Approver.model_validate(r) for r in rows)}
