@@ -120,10 +120,13 @@ Packages mirror §1's planes, so each trust boundary is a package boundary. Depe
 | `decision/` | TB4, decision gate | `routing` (recommendation → decision), approvals, `ApprovalGrant`, fingerprint, `submit_finance_decision`, `FinalResult` | the above + persistence/observability **ports** |
 | `infra/` | adapters | `persistence/` (protocols, records, `sqlite/`), `observability/`, settings | kernel → assessment |
 | `orchestration/` | runtime | LangGraph graphs, nodes, budget, ToolRunner | everything except api/cli |
-| `api/`, `cli.py` | API surface | FastAPI routes, `ap ingest` | orchestration, infra |
+| `services/` | use cases | `RunService` (start, get, timeline, O7 hook), `ApprovalService`, `EvalService`, `ServiceContainer` (composition root) | everything below it |
+| `api/` | API surface (router + controller) | FastAPI routes, request schemas, dependencies; HTTP in, HTTP out | services, kernel, intake |
+| `cli.py` | CLI | `ap ingest` | orchestration, infra, services |
 
 Rules:
-- No plane imports the concrete store (`infra/persistence/sqlite`). Orchestration, api and cli wire it in through the `Store` protocol.
+- No plane imports the concrete store (`infra/persistence/sqlite`). Orchestration, services and cli wire it in through the `Store` protocol.
+- `api/` never touches the Orchestrator, storage or settings: every route calls a service (our decision, P7). HTTP, CLI and tests share the same use cases.
 - `decision/` is the only plane that touches the store, because TB4 sits next to the decision and audit store. It uses protocols only.
 - `submit_finance_decision` lives in `decision/`, not `evidence/tools/`: the evidence plane is read-only.
 
@@ -624,6 +627,18 @@ class FinalResult(BaseModel):
 | `GET /evals/latest` | List evaluation results (report) | Pass/fail table (§11) |
 
 FastAPI's generated OpenAPI schema satisfies §3's explicit-schema requirement for the API surface.
+
+Implementation notes (our decisions, P7):
+
+| Topic | Decision |
+|---|---|
+| Status codes | `POST /runs` 201; approval 200 when accepted, 409 when a check fails (run stays `AWAITING_APPROVAL`), 404 for an unknown run; invalid bodies 422 at TB1. |
+| Simulation hooks | `POST /runs` accepts an optional `simulation` block (fault profile, scripted completions), labelled SIMULATED; scripted completions are ignored when the anthropic adapter is configured. |
+| Replay-safe body | The approval response is always returned from the stored copy, so every delivery is byte-identical (a freshly built dict and the stored sorted-key JSON differed only in key order). |
+| Service layer | Routes are thin: they translate HTTP to `services/` calls and service errors (`RunNotFound`, `NoEvalReport`) to status codes. |
+| Startup | The app's lifespan builds the `ServiceContainer` (config, Orchestrator) and runs `recover_interrupted()` (O7). Tests inject a prebuilt container. |
+| Evals | `POST /evals` runs FIN-001..005 on a fresh database per eval run (metrics measured in isolation, production data untouched) and stores the report as `evals/latest.json` next to the database; `GET /evals/latest` returns it. Recall@5 uses each case's `golden_doc_ids`. |
+| Same case, second run | A decision already recorded for the case by an earlier run is replayed by submit, and the second run still completes (it previously stayed `AWAITING_APPROVAL`). |
 
 ---
 

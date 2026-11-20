@@ -5,7 +5,7 @@ Internal working document. Builds `docs/architecture.md` phase by phase.
 ## Context
 `docs/architecture.md` holds the final design for the take-home AP agent. This plan builds the design within the 8-hour timebox (§8). Phases follow the architecture's "never cut" list, so the approval gate, idempotency, redaction, citations, the superseded filter, budget/retry and restart-resume land before the polish items. Each phase ends green under `make test`.
 
-**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6 ✅ · P7–P8 pending.
+**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6 ✅ · P7 ✅ · P8 pending.
 
 **Resolved in P4:** the C5 limits-table gap found in P2 (and the same gap for C3's FIN-POL-004 §4) is fixed by two always-on query arms, C3-STATUS and C5-LIMITS (architecture §3.4). Confidence moved to `decision/confidence.py` because it returns the `Confidence` type from `decision/`; `EscalationRule` moved to `controls/policy.py` so controls never import infra.
 
@@ -39,7 +39,8 @@ src/ap_agent/          # one package per plane, enforced by tests/unit/test_impo
                      # start_graph.py, resume_graph.py, evals/ (runner, metrics)
   infra/             # settings.py (ONLY place reading env/YAML); persistence/ (protocols, records,
                      # sqlite/); observability/ (events, logger)
-  api/               # app.py, routes for runs, approval, evals
+  services/          # runs.py, approvals.py, evals.py, container.py (composition root), errors.py
+  api/               # app.py, dependencies.py, schemas.py, routes/ (runs, approval, evals): thin, calls services only
   cli.py             # `ap ingest`
 tests/ unit/  contract/  scenarios/  live/   (pytest markers: live)
 ```
@@ -121,7 +122,7 @@ tests/ unit/  contract/  scenarios/  live/   (pytest markers: live)
   - same key with a different payload → conflict;
   - canary grep over every DB text column, logs and `prompt_redacted`.
 
-### P7: API and evals (0.5h)
+### P7: API and evals (0.5h) ✅
 - `api/`: the endpoints in architecture §10, with Pydantic request and response models (OpenAPI). `GET /runs/{id}?timeline=1` renders from audit_events (extension).
 - `orchestration/evals/`: run FIN-001…005 and compute the architecture §11 metrics → pass/fail table. Served by `POST /evals` and `GET /evals/latest`.
 - FIN-005 concurrent double callback test via httpx (`asyncio.gather` of two approval POSTs): one decision, byte-identical bodies.
