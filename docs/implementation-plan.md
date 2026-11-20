@@ -5,7 +5,7 @@ Internal working document. Builds `docs/architecture.md` phase by phase.
 ## Context
 `docs/architecture.md` holds the final design for the take-home AP agent. This plan builds the design within the 8-hour timebox (§8). Phases follow the architecture's "never cut" list, so the approval gate, idempotency, redaction, citations, the superseded filter, budget/retry and restart-resume land before the polish items. Each phase ends green under `make test`.
 
-**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5–P8 pending.
+**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6–P8 pending.
 
 **Resolved in P4:** the C5 limits-table gap found in P2 (and the same gap for C3's FIN-POL-004 §4) is fixed by two always-on query arms, C3-STATUS and C5-LIMITS (architecture §3.4). Confidence moved to `decision/confidence.py` because it returns the `Confidence` type from `decision/`; `EscalationRule` moved to `controls/policy.py` so controls never import infra.
 
@@ -95,7 +95,7 @@ tests/ unit/  contract/  scenarios/  live/   (pytest markers: live)
 - `decision/confidence.py`: LOW / MEDIUM / HIGH rule (lives in decision/: it returns the `Confidence` result type).
 - Tests (unit): each control's PASS, FAIL and INDETERMINATE paths; aggregation table; a model proposal of REJECT_INVALID gets capped; applicability can't be skipped by text.
 
-### P5: Model boundary (0.75h)
+### P5: Model boundary (0.75h) ✅
 - `assessment/adapters/scripted.py` (completions from case fixture, including a malformed-first variant), `assessment/adapters/anthropic.py` (model id and limits from Settings; JSON output parsed into `ModelAssessment`).
 - `assessment/prompt.py`: system prompt is static. Evidence goes into an `<untrusted_evidence>` block built from allow-listed, redacted fields (`assessment/redaction.py`) with provenance and trust labels.
 - `assessment/assess.py`: validate → repair with errors (O6) → UNAVAILABLE + HOLD floor. Every attempt writes a `model_calls` row (`prompt_sha256`, `prompt_redacted`, completion) and charges the budget.

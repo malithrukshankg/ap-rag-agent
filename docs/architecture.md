@@ -419,7 +419,8 @@ Used in one node, ASSESS.
 
 ```python
 class ClaimCitation(BaseModel): chunk_id: str; quote: str; use: Literal["authority", "risk_evidence"]
-class Claim(BaseModel): finding_ref: ControlId; text: str; citations: list[ClaimCitation]
+class Claim(BaseModel): finding_ref: ControlId; agrees_with_control: bool; text: str; citations: list[ClaimCitation]
+# agrees_with_control (our decision, P5): the structured way to dispute a control; a disputing claim goes to unknowns
 class RiskIndicator(BaseModel): indicator: IndicatorCode; chunk_id: str; quote: str
 class ModelAssessment(BaseModel):
     findings: list[Claim]; inferences: list[str]; unknowns: list[str]
@@ -436,6 +437,15 @@ class ModelClient(Protocol):
 | Malformed or schema-invalid | Repair retry with the validation errors, max 2 repair attempts after the initial call (O6), each charged to the budget; then assessment `UNAVAILABLE`, floor raised to `HOLD_FOR_INFORMATION`, audit event. |
 | Schema-valid but wrong | Structural limits: the model cannot emit numbers or control statuses that reach the result. Its proposal is combined as `max(control_floor, proposal)`, so it can only tighten. Claims contradicting a control status drop to unknowns. Residual risk: a wrong narrative. It is measured by the live eval, not prevented. |
 | Unverifiable citation | Claim dropped to unknowns, `citation.rejected` event, confidence lowered. An untrusted chunk cited as `authority` is rejected; it may be cited as `risk_evidence`. |
+
+### 5.1a Implementation notes (our decisions, P5)
+
+- **Evidence sources** the model may cite: retrieved chunks (by chunk_id) and the case's own free text (`case:notes`, `case:attachment:N`), both labelled with trust. Case text is always untrusted, so it is citable only as risk evidence.
+- **Escaping:** `<`, `>`, `&` in untrusted text are escaped in the prompt so a document cannot close `<untrusted_evidence>` or forge a source tag; quotes are unescaped before the verbatim check.
+- **Redaction:** case text has account-like digit runs masked to `****last4`; chunk text is passed verbatim so its hash still matches.
+- **Plain-text adapter:** the anthropic adapter returns text; JSON validation and repair happen in `assess.py` for both adapters. SDK retries are off, so every attempt is charged and recorded. Server-side refusal fallback is on (`fallbacks="default"`); the serving model id is recorded.
+- **Purity:** `assessment/` does no I/O. `orchestration/model_runner.py` supplies the budget charge and the per-attempt recorder, and emits `citation.rejected`.
+- **For P6:** verified model risk indicators feed C6, so C6 must be re-evaluated after ASSESS (in DECIDE) with `model_indicators` set.
 
 ### 5.2 Injection boundary
 
@@ -567,7 +577,7 @@ class FinalResult(BaseModel):
 | `control_results` | ControlResult rows with inputs, formula, result | |
 | `retrievals` | query, filters, chunk_ids, scores. Kept minimal; needed for the citation check | |
 | `tool_calls` | per attempt, redacted args and response | |
-| `model_calls` | run_id, node, attempt, prompt_sha256, **prompt_redacted**, completion_text, parse_result, tokens, duration_ms, ts | |
+| `model_calls` | run_id, node, attempt, prompt_sha256, **prompt_redacted**, completion_text, parse_result, model_id, request_id (FIN-POL-010 §4), tokens, duration_ms, ts | |
 | `approvals` | status, approver_id, stored response | `UNIQUE(run_id, decision_fingerprint)` |
 | `decisions` | decision, computed total, grant id | `UNIQUE(idempotency_key)` |
 | `sim_ledger` | simulated postings / holds / rejections | `UNIQUE(idempotency_key)` |
