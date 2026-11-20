@@ -6,7 +6,9 @@
 # Env:     AWS_PROFILE (default "default"), AWS_REGION (default ap-southeast-2),
 #          MODEL_ADAPTER (anthropic|scripted, default anthropic),
 #          ANTHROPIC_API_KEY (else read from ./.env), ALLOWED_CIDR (default: your public IP/32),
-#          ROTATE_ANTHROPIC_KEY=1 to overwrite the stored key.
+#          TRACING_ENABLED / TRACING_HOST (default: AP_TRACING__ENABLED / AP_TRACING__HOST
+#          from .env), with LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY when tracing is on.
+#          Secrets are synced to SSM only when they differ from the stored value.
 # Works in bash on Linux/macOS and in Git Bash on Windows.
 set -euo pipefail
 export MSYS_NO_PATHCONV=1   # Git Bash: keep "/ap-rag-agent/..." parameter names verbatim
@@ -30,39 +32,71 @@ done
 docker info >/dev/null 2>&1 || { echo "Docker daemon is not running" >&2; exit 1; }
 aws sts get-caller-identity --query Account --output text >/dev/null
 
+# Value of a variable from the environment, else from ./.env (quotes and CR stripped).
+local_value() {
+  local v="${!1:-}"
+  if [ -z "$v" ] && [ -f "$ROOT/.env" ]; then
+    v="$(grep -E "^$1=" "$ROOT/.env" | tail -n1 | cut -d= -f2- \
+      | tr -d '\r' | sed -e 's/^["'\'']//' -e 's/["'\'']$//')"
+  fi
+  printf '%s' "$v"
+}
+
+# Write a SecureString only when it differs from what is stored: .env is the source of truth,
+# re-running is a no-op, and values are compared by hash, never printed.
+sync_secret() {
+  local param="$1" value="$2" current=""
+  current="$(aws ssm get-parameter --name "$param" --with-decryption \
+    --query Parameter.Value --output text 2>/dev/null | tr -d '\r\n')" || current=""
+  if [ -n "$current" ] && [ "$(printf '%s' "$current" | sha256sum)" = "$(printf '%s' "$value" | sha256sum)" ]; then
+    echo "unchanged $param"
+  else
+    aws ssm put-parameter --name "$param" --type SecureString --overwrite --value "$value" >/dev/null
+    echo "updated   $param"
+  fi
+}
+
 # --- 1. Secrets (SSM SecureString; never in Terraform state, never echoed) -------------------
 log "Secrets in SSM Parameter Store"
 if ! param_exists "$HMAC_PARAM"; then
   aws ssm put-parameter --name "$HMAC_PARAM" --type SecureString \
     --value "$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')" >/dev/null
-  echo "created $HMAC_PARAM (random)"
+  echo "created   $HMAC_PARAM (random)"
 else
-  echo "kept existing $HMAC_PARAM"
+  # Kept stable across deploys: it fingerprints vendor bank accounts in stored run state.
+  echo "unchanged $HMAC_PARAM"
 fi
 
 if [ "$MODEL_ADAPTER" = "anthropic" ]; then
-  if ! param_exists "$KEY_PARAM" || [ "${ROTATE_ANTHROPIC_KEY:-0}" = "1" ]; then
-    KEY="${ANTHROPIC_API_KEY:-}"
-    if [ -z "$KEY" ] && [ -f "$ROOT/.env" ]; then
-      KEY="$(grep -E '^ANTHROPIC_API_KEY=' "$ROOT/.env" | tail -n1 | cut -d= -f2- \
-        | tr -d '\r' | sed -e 's/^["'\'']//' -e 's/["'\'']$//')"
-    fi
-    [ -n "$KEY" ] || { echo "ANTHROPIC_API_KEY not set (env or .env); or use MODEL_ADAPTER=scripted" >&2; exit 1; }
-    aws ssm put-parameter --name "$KEY_PARAM" --type SecureString --overwrite --value "$KEY" >/dev/null
-    unset KEY
-    echo "stored $KEY_PARAM"
-  else
-    echo "kept existing $KEY_PARAM"
-  fi
+  KEY="$(local_value ANTHROPIC_API_KEY)"
+  [ -n "$KEY" ] || { echo "ANTHROPIC_API_KEY not set (env or .env); or use MODEL_ADAPTER=scripted" >&2; exit 1; }
+  sync_secret "$KEY_PARAM" "$KEY"
+  unset KEY
+fi
+
+# Optional Langfuse tracing: follows AP_TRACING__ENABLED / AP_TRACING__HOST unless overridden.
+TRACING_ENABLED="${TRACING_ENABLED:-$(local_value AP_TRACING__ENABLED)}"
+TRACING_ENABLED="$(printf '%s' "${TRACING_ENABLED:-false}" | tr '[:upper:]' '[:lower:]')"
+[ "$TRACING_ENABLED" = "true" ] || TRACING_ENABLED=false
+TRACING_HOST="${TRACING_HOST:-$(local_value AP_TRACING__HOST)}"
+TRACING_HOST="${TRACING_HOST:-https://cloud.langfuse.com}"
+if [ "$TRACING_ENABLED" = "true" ]; then
+  for name in LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY; do
+    VAL="$(local_value "$name")"
+    [ -n "$VAL" ] || { echo "$name not set but tracing is enabled (TRACING_ENABLED=false to skip)" >&2; exit 1; }
+    sync_secret "/$PROJECT/$(printf '%s' "$name" | tr '[:upper:]_' '[:lower:]-')" "$VAL"
+  done
+  unset VAL
 fi
 
 # --- 2. Infrastructure -----------------------------------------------------------------------
 ALLOWED_CIDR="${ALLOWED_CIDR:-$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')/32}"
-log "Terraform apply (API open to $ALLOWED_CIDR only)"
+log "Terraform apply (API open to $ALLOWED_CIDR only; tracing=$TRACING_ENABLED)"
 terraform -chdir="$TF_DIR" init -input=false >/dev/null
 terraform -chdir="$TF_DIR" apply -input=false -auto-approve \
   -var "aws_profile=$AWS_PROFILE" -var "region=$AWS_REGION" \
-  -var "allowed_cidr=$ALLOWED_CIDR" -var "model_adapter=$MODEL_ADAPTER"
+  -var "allowed_cidr=$ALLOWED_CIDR" -var "model_adapter=$MODEL_ADAPTER" \
+  -var "tracing_enabled=$TRACING_ENABLED" -var "tracing_host=$TRACING_HOST"
 
 REPO_URL="$(terraform -chdir="$TF_DIR" output -raw ecr_repository_url)"
 INSTANCE_ID="$(terraform -chdir="$TF_DIR" output -raw instance_id)"

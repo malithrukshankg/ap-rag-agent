@@ -5,6 +5,8 @@ locals {
   ssm_prefix          = "/${var.project}"
   anthropic_key_param = "${local.ssm_prefix}/anthropic-api-key"
   hmac_key_param      = "${local.ssm_prefix}/payment-hmac-key"
+  langfuse_pub_param  = "${local.ssm_prefix}/langfuse-public-key"
+  langfuse_sec_param  = "${local.ssm_prefix}/langfuse-secret-key"
   image_uri           = "${aws_ecr_repository.app.repository_url}:${var.image_tag}"
 }
 
@@ -146,6 +148,10 @@ resource "aws_instance" "app" {
     model_adapter       = var.model_adapter
     anthropic_key_param = local.anthropic_key_param
     hmac_key_param      = local.hmac_key_param
+    tracing_enabled     = var.tracing_enabled
+    tracing_host        = var.tracing_host
+    langfuse_pub_param  = local.langfuse_pub_param
+    langfuse_sec_param  = local.langfuse_sec_param
   })
   user_data_replace_on_change = true
 

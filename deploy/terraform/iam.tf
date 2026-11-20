@@ -44,6 +44,8 @@ data "aws_iam_policy_document" "app" {
     resources = [
       "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${local.anthropic_key_param}",
       "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${local.hmac_key_param}",
+      "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${local.langfuse_pub_param}",
+      "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${local.langfuse_sec_param}",
     ]
   }
 }

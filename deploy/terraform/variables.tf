@@ -47,6 +47,23 @@ variable "image_tag" {
   default     = "latest"
 }
 
+variable "tracing_enabled" {
+  description = "Mirror audit events to Langfuse (needs the Langfuse keys in SSM; deploy.sh writes them)."
+  type        = bool
+  default     = false
+}
+
+variable "tracing_host" {
+  description = "Langfuse host URL (not secret)."
+  type        = string
+  default     = "https://cloud.langfuse.com"
+
+  validation {
+    condition     = can(regex("^https://", var.tracing_host))
+    error_message = "tracing_host must be an https:// URL."
+  }
+}
+
 variable "model_adapter" {
   description = "anthropic (real Claude, needs the API key in SSM) or scripted (no key, no network)."
   type        = string

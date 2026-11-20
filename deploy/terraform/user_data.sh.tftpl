@@ -55,6 +55,13 @@ TMP="$(mktemp /run/ap-agent.env.XXXXXX)"
   if [ "${model_adapter}" = "anthropic" ]; then
     echo "ANTHROPIC_API_KEY=$(get_param "${anthropic_key_param}")"
   fi
+  if [ "${tracing_enabled}" = "true" ]; then
+    echo "AP_TRACING__ENABLED=true"
+    echo "AP_TRACING__HOST=${tracing_host}"
+    echo "AP_TRACING__ENVIRONMENT=aws"
+    echo "LANGFUSE_PUBLIC_KEY=$(get_param "${langfuse_pub_param}")"
+    echo "LANGFUSE_SECRET_KEY=$(get_param "${langfuse_sec_param}")"
+  fi
 } > "$TMP"
 mv "$TMP" /run/ap-agent.env
 PREPARE

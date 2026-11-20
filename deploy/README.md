@@ -20,13 +20,15 @@ AWS_PROFILE=<profile> deploy/scripts/deploy.sh                          # real C
 AWS_PROFILE=<profile> MODEL_ADAPTER=scripted deploy/scripts/deploy.sh   # no key, no model calls
 ```
 The script:
-1. Writes the secrets to SSM as SecureStrings: a random HMAC key, created once, and the Anthropic key. Terraform never sees them, so the state holds no secrets.
+1. Syncs the secrets to SSM as SecureStrings, and only when they differ from the stored value (compared by hash, never printed). It reads the Anthropic key, and the Langfuse keys if tracing is on, from the environment or `./.env`. The HMAC key is random, created once and then kept stable, because it fingerprints bank accounts in stored run state. Terraform never sees any secret, so the state holds none.
 2. Runs `terraform apply`, opening port 8000 to your current public IP only.
 3. Builds and pushes the image.
 4. Restarts the service.
 5. Waits for `/openapi.json`.
 
-Re-run it to roll out code changes. Use `ROTATE_ANTHROPIC_KEY=1` to replace the stored key.
+Re-run it to roll out code changes or a changed key.
+
+**Langfuse tracing** (optional) follows `AP_TRACING__ENABLED` and `AP_TRACING__HOST` in `.env`. Override them with `TRACING_ENABLED=true|false` and `TRACING_HOST=...`. Traces are tagged `environment=aws`. Toggling tracing changes the instance's boot script, which **replaces the instance**: the data volume is kept and reattached, but the public IP changes.
 
 ## Use
 ```bash
