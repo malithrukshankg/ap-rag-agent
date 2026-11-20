@@ -1,0 +1,26 @@
+{
+  "description": "Valid three-way match: invoice, PO and receipt agree; vendor active; policy requires an approver. Expect cited evidence, calculated totals, an approval request, then exactly one submit.",
+  "case": {
+    "case_id": "FIN-001",
+    "invoice_ref": "INV-1001-0815",
+    "vendor_id": "V-1001",
+    "vendor_name": "Acme Office Supplies Pty Ltd",
+    "amount": "6050.00",
+    "tax_amount": "550.00",
+    "currency": "AUD",
+    "invoice_date": "2026-08-15",
+    "po_ref": "PO-1001",
+    "requested_by": "u-req-01",
+    "lines": [
+      {"line_no": 1, "description": "Ergonomic office chair", "quantity": "20", "unit_price": "245.00", "line_total": "4900.00", "po_line_no": 1},
+      {"line_no": 2, "description": "LED desk lamp", "quantity": "10", "unit_price": "60.00", "line_total": "600.00", "po_line_no": 2}
+    ]
+  },
+  "faults": {},
+  "expected": {
+    "recommendation": "APPROVE_FOR_POSTING",
+    "approval_requested": true,
+    "final_decision": "POST_FOR_PAYMENT",
+    "duplicate_callbacks": 1
+  }
+}

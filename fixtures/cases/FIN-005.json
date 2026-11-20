@@ -1,0 +1,25 @@
+{
+  "description": "Duplicate approval: a clean case reaches AWAITING_APPROVAL and the same approval callback is delivered twice. Expect one effective finance decision and identical, replay-safe responses.",
+  "case": {
+    "case_id": "FIN-005",
+    "invoice_ref": "INV-1001-0901",
+    "vendor_id": "V-1001",
+    "vendor_name": "Acme Office Supplies Pty Ltd",
+    "amount": "1320.00",
+    "tax_amount": "120.00",
+    "currency": "AUD",
+    "invoice_date": "2026-09-01",
+    "po_ref": "PO-1005",
+    "requested_by": "u-req-01",
+    "lines": [
+      {"line_no": 1, "description": "Whiteboard 1800x1200", "quantity": "12", "unit_price": "100.00", "line_total": "1200.00", "po_line_no": 1}
+    ]
+  },
+  "faults": {},
+  "expected": {
+    "recommendation": "APPROVE_FOR_POSTING",
+    "approval_requested": true,
+    "final_decision": "POST_FOR_PAYMENT",
+    "duplicate_callbacks": 2
+  }
+}

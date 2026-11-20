@@ -1,0 +1,24 @@
+{
+  "description": "Duplicate invoice: invoice number and amount match an already-paid record (H-0002). Expect REJECT_DUPLICATE recorded as a HOLD for AP review; never a payment proposal.",
+  "case": {
+    "case_id": "FIN-002",
+    "invoice_ref": "INV-2002-0803",
+    "vendor_id": "V-2002",
+    "vendor_name": "Coastal Cleaning Services Pty Ltd",
+    "amount": "3300.00",
+    "tax_amount": "300.00",
+    "currency": "AUD",
+    "invoice_date": "2026-08-03",
+    "po_ref": "PO-2002",
+    "requested_by": "u-req-02",
+    "lines": [
+      {"line_no": 1, "description": "Monthly office cleaning, July 2026", "quantity": "1", "unit_price": "3000.00", "line_total": "3000.00", "po_line_no": 1}
+    ]
+  },
+  "faults": {},
+  "expected": {
+    "recommendation": "REJECT_DUPLICATE",
+    "approval_requested": false,
+    "final_decision": "HOLD"
+  }
+}
