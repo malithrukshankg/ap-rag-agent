@@ -59,6 +59,15 @@ logging:
   level: INFO
   path: var/logs/ap.jsonl
 
+# Optional Langfuse tracing (§10 extension): an observe-only copy of audit events and model
+# attempts, one trace per run. audit_events/model_calls in SQLite stay the system of record.
+# Needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY. Enable with AP_TRACING__ENABLED=true.
+tracing:
+  enabled: false
+  host: https://cloud.langfuse.com   # or a self-hosted Langfuse URL
+  environment: local
+  send_prompts: false          # true also sends the redacted prompt and completion text
+
 # O5: when several controls tie at the top outcome floor, the first matching entry sets the
 # single primary exception_category (FIN-POL-007 §1) and escalation_target (FIN-POL-007 §3).
 # Every other exception is still listed in the result.

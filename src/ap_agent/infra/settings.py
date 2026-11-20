@@ -3,7 +3,8 @@
 
 Precedence, highest first: environment variables (AP_ prefix, `__` for nesting, e.g.
 AP_STORAGE__SQLITE_PATH) → .env file → config/app.yaml. Secrets come only from the
-environment: ANTHROPIC_API_KEY and AP_PAYMENT_HMAC_KEY.
+environment: ANTHROPIC_API_KEY, AP_PAYMENT_HMAC_KEY and, when tracing is enabled,
+LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY.
 """
 
 from pathlib import Path
@@ -91,6 +92,15 @@ class LoggingSettings(_Cfg):
     path: Path
 
 
+class TracingSettings(_Cfg):
+    """Optional Langfuse mirror of the audit trail (§10 extension). Off unless enabled."""
+
+    enabled: bool = False
+    host: str = "https://cloud.langfuse.com"
+    environment: str = Field(default="local", pattern=r"^[a-z0-9_-]{1,40}$")
+    send_prompts: bool = False  # redacted prompt/completion text leaves the host only if true
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="AP_",
@@ -111,12 +121,19 @@ class Settings(BaseSettings):
     api: ApiSettings
     logging: LoggingSettings
     escalation_precedence: list[EscalationRule]
+    tracing: TracingSettings = TracingSettings()
 
     anthropic_api_key: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY")
     )
     payment_hmac_key: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("AP_PAYMENT_HMAC_KEY")
+    )
+    langfuse_public_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("LANGFUSE_PUBLIC_KEY")
+    )
+    langfuse_secret_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("LANGFUSE_SECRET_KEY")
     )
 
     @classmethod

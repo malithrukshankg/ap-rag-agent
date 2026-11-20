@@ -37,6 +37,7 @@ from ap_agent.evidence.tools.retrieve import RetrieveTool
 from ap_agent.evidence.tools.vendor import VendorTool
 from ap_agent.infra.observability.events import RunCompleted, RunFailed
 from ap_agent.infra.observability.logger import RunEventLogger, utc_now_iso
+from ap_agent.infra.observability.tracing import FailSafeTracer, Tracer
 from ap_agent.infra.persistence.records import ApprovalRecord, DecisionRecord
 from ap_agent.infra.persistence.sqlite import SqliteStore
 from ap_agent.infra.settings import ConfigError, Settings
@@ -56,6 +57,7 @@ from ap_agent.orchestration.resume_graph import build_resume_graph
 from ap_agent.orchestration.start_graph import build_start_graph
 from ap_agent.orchestration.state import RunState
 from ap_agent.orchestration.tool_runner import ToolRunner
+from ap_agent.orchestration.tracer_factory import build_tracer
 
 
 class RunView(Strict):
@@ -90,6 +92,7 @@ class Orchestrator:
         today: Callable[[], date] = date.today,
         sleep: Callable[[float], None] = time.sleep,
         after_ledger: Callable[[], None] | None = None,
+        tracer: Tracer | None = None,
     ) -> None:
         if settings.payment_hmac_key is None or not settings.payment_hmac_key.get_secret_value():
             raise ConfigError("AP_PAYMENT_HMAC_KEY must be set")
@@ -104,6 +107,9 @@ class Orchestrator:
         self.params = params
         self._clock, self._sleep, self._after_ledger = clock, sleep, after_ledger
         self._hmac_key = settings.payment_hmac_key.get_secret_value().encode("utf-8")
+        # Observe-only (Langfuse when tracing.enabled). Fail-safe: a tracer error is logged,
+        # never raised, so tracing cannot change or fail a run.
+        self.tracer = FailSafeTracer(tracer or build_tracer(settings))
         self.store = SqliteStore(settings.storage.sqlite_path)
         ingest(self.store.db, settings.corpus.path, registry)
         self.backend = FixtureBackend(settings.tools.fixtures_dir)
@@ -119,6 +125,7 @@ class Orchestrator:
         self._locks_guard = threading.Lock()
 
     def close(self) -> None:
+        self.tracer.flush()
         self._saver_conn.close()
         self.store.close()
 
@@ -152,6 +159,9 @@ class Orchestrator:
         return SubmitFinanceDecisionTool(
             self.store, events, clock=self._clock, after_ledger=self._after_ledger
         )
+
+    def _events(self, run_id: str) -> RunEventLogger:
+        return RunEventLogger(self.store.audit, run_id, clock=self._clock, tracer=self.tracer)
 
     def _config(self, run_id: str) -> Any:
         return {"configurable": {"thread_id": run_id}}
@@ -195,7 +205,7 @@ class Orchestrator:
         model_client: ModelClient | None = None,
     ) -> RunView:
         run_id = f"run-{uuid.uuid4().hex[:12]}"
-        events = RunEventLogger(self.store.audit, run_id, clock=self._clock)
+        events = self._events(run_id)
         budget = Budget(self.settings.budget)
         tools = self._tools(run_id, events, budget, faults)
         model = ModelRunner(
@@ -207,6 +217,7 @@ class Orchestrator:
             max_tokens=self.settings.model.max_tokens,
             max_repairs=self.settings.model_repair.max_repair_attempts,
             clock=self._clock,
+            tracer=self.tracer,
         )
         nodes = StartNodes(
             run_id=run_id,
@@ -287,7 +298,7 @@ class Orchestrator:
             run = self.store.runs.get(run_id)
             if run is None:
                 return ApprovalReply(run_id=run_id, accepted=False, reason="unknown run")
-            events = RunEventLogger(self.store.audit, run_id, clock=self._clock)
+            events = self._events(run_id)
             res = self.gate.resolve(
                 run_id=run_id,
                 verdict=verdict,
@@ -371,7 +382,7 @@ class Orchestrator:
         """Stale RUNNING runs become FAILED(interrupted); the caller re-runs the case."""
         failed = []
         for run in self.store.runs.list_by_status(RunStatus.RUNNING):
-            events = RunEventLogger(self.store.audit, run.run_id, clock=self._clock)
+            events = self._events(run.run_id)
             self._fail(run.run_id, events, "interrupted", None)
             failed.append(run.run_id)
         return failed

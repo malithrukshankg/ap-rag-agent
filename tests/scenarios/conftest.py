@@ -37,8 +37,10 @@ def settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Settings:
     monkeypatch.setenv("AP_PAYMENT_HMAC_KEY", "scenario-test-key")
     # The stable tier never calls a real model, whatever config/app.yaml says (brief §7).
     monkeypatch.setenv("AP_MODEL__ADAPTER", "scripted")
+    monkeypatch.setenv("AP_TRACING__ENABLED", "false")  # and never exports traces
     s = load_settings(ROOT / "config" / "app.yaml")
     assert s.model.adapter == "scripted"
+    assert not s.tracing.enabled
     tools = s.tools.model_copy(
         update={
             "backoff_s": 0.0,
