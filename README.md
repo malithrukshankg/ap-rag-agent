@@ -77,6 +77,12 @@ AP_TRACING__HOST=https://cloud.langfuse.com
 
 Tracing is observe-only. SQLite stays the system of record, and a Langfuse outage cannot change or fail a run. By default no prompt text or invoice amount is sent to Langfuse; set `AP_TRACING__SEND_PROMPTS=true` to send the redacted prompt and completion text as well.
 
+**Sample trace** (read-only, from the AWS instance, no Langfuse login needed): [FIN-005 in Langfuse](https://jp.cloud.langfuse.com/project/cmwolex23000rad0eipnsc8sm/traces/4b189ee25bb7c6c0e864503746873a96). It is one run, shown as a tree:
+- a root `run` span tagged with the case id;
+- one span per graph node (INTAKE → RETRIEVE → GATHER → RECONCILE → ASSESS → DECIDE → REQUEST_APPROVAL), each holding its audit events (`tool.attempt`, `retrieval.performed`, `control.evaluated`);
+- the single model call (`assess.model`, with tokens and cost);
+- after the approval callback, the resumed part of the same trace: `approval.granted` → VERIFY_GRANT → SUBMIT → PERSIST → `run.completed`, which ends in `POST_FOR_PAYMENT`.
+
 ### 3. Choose a mode: scripted or live
 
 The only difference between the two modes is **who writes the model's assessment** (the narrative, citations, risk flags and proposed outcome in the ASSESS step). Everything else is identical: retrieval, the simulated tools, controls C1–C6, the arithmetic, the approval gate and the database. That is deliberate. Code decides the outcome, so swapping the model must not change the controls.
