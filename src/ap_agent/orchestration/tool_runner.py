@@ -115,6 +115,7 @@ class ToolRunner:
         faults: FaultInjector | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], str] = utc_now_iso,
+        first_seq: int = 0,  # continue a run's tool_call ids (resume graph)
     ) -> None:
         self._run_id = run_id
         self._settings = settings
@@ -124,7 +125,7 @@ class ToolRunner:
         self._faults = faults or FaultInjector()
         self._sleep = sleep
         self._clock = clock
-        self._seq = 0
+        self._seq = first_seq
 
     def _tool_settings(self, name: str) -> ToolSettings:
         cfg = getattr(self._settings, name, None)

@@ -45,6 +45,15 @@ class Budget:
     def max_retries_per_call(self) -> int:
         return self.limits.max_retries_per_call
 
+    @classmethod
+    def resume(cls, limits: BudgetSettings, snapshot: dict[str, object]) -> "Budget":
+        """Continue a run's counters (e.g. the resume graph after an approval)."""
+        budget = cls(limits)
+        for counter in budget.used:
+            value = snapshot.get(f"{counter}_used", 0)
+            budget.used[counter] = int(value) if isinstance(value, int | str) else 0
+        return budget
+
     def snapshot(self) -> dict[str, int]:
         return {
             **{f"{k}_used": v for k, v in self.used.items()},
