@@ -10,6 +10,21 @@ guarantees rely on it.
 | Anthropic API | Real, unless `MODEL_ADAPTER=scripted` |
 | Vendor/PO/history tools, `submit_finance_decision` ledger | Simulated (fixtures, sandbox ledger), as locally. Nothing can move money. |
 
+## Infrastructure as code
+Every AWS resource is defined in Terraform under [`terraform/`](terraform/). Nothing is created by hand in the console, and every resource is tagged `ManagedBy=terraform`.
+
+| File | Defines |
+|---|---|
+| [`main.tf`](terraform/main.tf) | ECR repository (scan on push; lifecycle policy keeps the last 5 images); security group (port 8000 from `allowed_cidr` only, HTTPS-only egress, no SSH); encrypted gp3 data volume attached as `/dev/sdf`; the EC2 instance (IMDSv2 required, hop limit 1, encrypted root disk, no key pair) |
+| [`iam.tf`](terraform/iam.tf) | Instance role and profile: SSM managed-instance core, pull from this one ECR repo, read this project's SSM parameters (the HMAC key, the Anthropic key, and the Langfuse keys) |
+| [`user_data.sh.tftpl`](terraform/user_data.sh.tftpl) | First-boot script: installs Docker, mounts the data volume at `/data` (formatting it only if blank), and installs the `ap-agent` systemd service. Before every start, the service pulls the image and writes the secrets to `/run` (tmpfs) |
+| [`variables.tf`](terraform/variables.tf) / [`outputs.tf`](terraform/outputs.tf) | Inputs: region, profile, `allowed_cidr`, instance type, data volume size, image tag, model adapter, tracing. Outputs: `api_url`, `instance_id`, `ecr_repository_url`, `data_volume_id`, `ssm_session_command` |
+| [`versions.tf`](terraform/versions.tf), [`.terraform.lock.hcl`](terraform/.terraform.lock.hcl) | Terraform ≥ 1.6 and the AWS provider, pinned by the lock file |
+
+Terraform only looks up the account's default VPC and subnet and the current Amazon Linux 2023 AMI; it does not create them. A newer AMI does not replace a running instance. Secrets are not in Terraform: `deploy.sh` writes them to SSM and Terraform references only their names, so the state holds none. State is local (`terraform.tfstate`, gitignored), because there is one operator.
+
+`deploy.sh` (below) is the normal path, because it also writes the secrets and builds the image. To inspect or change the infrastructure directly, copy [`terraform.tfvars.example`](terraform/terraform.tfvars.example) to `terraform.tfvars`, then run `terraform -chdir=deploy/terraform init` and `terraform -chdir=deploy/terraform plan`.
+
 ## Prerequisites
 AWS CLI v2 with a profile, Terraform ≥ 1.6, Docker running, curl, bash (Git Bash works on Windows).
 Optional: the Session Manager plugin, for a shell on the instance.
@@ -57,7 +72,7 @@ On the instance (`$($TF ssm_session_command)`), `findmnt /data` shows the EBS vo
 ## Security posture
 - The API has **no authentication**: approver identity is asserted by the caller (CLAUDE.md #6). It is reachable only from `allowed_cidr`. `deploy.sh` defaults that to your public IP /32. The shared tester instance is deployed with `ALLOWED_CIDR=0.0.0.0/0`, an explicit opt-in that the script warns about. On that instance anyone with the URL can start runs, approve simulated postings and, in live mode, spend the Anthropic key, so set a spend limit on the key. No tool can move real money.
 - No SSH and no key pair. IMDSv2 is required, with hop limit 1, so the container can't read instance credentials.
-- The instance role can only pull this one ECR repo and read the two parameters.
+- The instance role can only pull this one ECR repo and read this project's SSM parameters: the HMAC key, the Anthropic key and the two Langfuse keys (the instance fetches the Langfuse keys only when tracing is on).
 - Secrets are fetched at each service start into `/run/ap-agent.env` (tmpfs, mode 600). They are never written to the EBS volume.
 - Root and data volumes are encrypted.
 
