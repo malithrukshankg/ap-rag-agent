@@ -339,10 +339,12 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
 
 The brief allows "at most one or two" optional extensions, and only after the required workflow is solid. Optional work "does not compensate for missing safety or reliability controls". We declare **two**. Both came out of required work, so neither replaced required work:
 
-| Declared extension | What it is | Why it came almost for free | Proven by |
+| Declared extension | What it is | Why it came almost for free | Test that proves it |
 |---|---|---|---|
-| **Run timeline** | `GET /runs/{run_id}?timeline=1` lists every audit event in order: node, event type, outcome, duration and a one-line detail. See the [transcripts](docs/transcripts/). | It renders the audit log that §4 already requires; no new data is collected. | `test_start_get_and_timeline` |
-| **Fault-injection tests** | Each case can carry a fault profile (`timeout`, `transient`, `ok`), consumed one attempt at a time. A test hook also simulates a process crash between the ledger write and the decision row. | §4 requires timeout, transient-failure and restart handling; injected faults are how that handling is proven. FIN-004's PO timeouts use the same mechanism. | `test_injected_timeouts_exhaust_retries_like_fin_004`, `test_crash_between_ledger_and_decision_posts_exactly_once` |
+| **Run timeline** | `GET /runs/{run_id}?timeline=1` lists every audit event in order: node, event type, outcome, duration and a one-line detail. See the [transcripts](docs/transcripts/). | It renders the audit log that §4 already requires; no new data is collected. | [`test_start_get_and_timeline`](tests/scenarios/test_api.py#L58) |
+| **Fault-injection tests** | Each case can carry a fault profile (`timeout`, `transient`, `ok`), consumed one attempt at a time. A test hook also simulates a process crash between the ledger write and the decision row. | §4 requires timeout, transient-failure and restart handling; injected faults are how that handling is proven. FIN-004's PO timeouts use the same mechanism. | [`test_injected_timeouts_exhaust_retries_like_fin_004`](tests/contract/test_tool_runner.py#L181), [`test_crash_between_ledger_and_decision_posts_exactly_once`](tests/scenarios/test_resilience.py#L53) |
+
+**How to read the test column:** each entry is an automated test in `tests/` that exercises the extension and fails if it breaks. Click a name to open its code. To run one: `uv run pytest -k <test_name>`. All of them run in the stable tier (`make test`).
 
 Three other §10 items overlap with the build. They are **not claimed as extensions**:
 - **Configurable budgets.** The step, tool-call, model-call and retry limits in `config/app.yaml` are the bounded loop that §4 requires, so they are core work. Token counts are recorded for every model call (`model_calls`). There is **no cost calculation in dollars and no token budget**.
