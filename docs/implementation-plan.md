@@ -5,7 +5,7 @@ Internal working document. Builds `docs/architecture.md` phase by phase.
 ## Context
 `docs/architecture.md` holds the final design for the take-home AP agent. This plan builds the design within the 8-hour timebox (§8). Phases follow the architecture's "never cut" list, so the approval gate, idempotency, redaction, citations, the superseded filter, budget/retry and restart-resume land before the polish items. Each phase ends green under `make test`.
 
-**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6–P8 pending.
+**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6 ✅ · P7–P8 pending.
 
 **Resolved in P4:** the C5 limits-table gap found in P2 (and the same gap for C3's FIN-POL-004 §4) is fixed by two always-on query arms, C3-STATUS and C5-LIMITS (architecture §3.4). Confidence moved to `decision/confidence.py` because it returns the `Confidence` type from `decision/`; `EscalationRule` moved to `controls/policy.py` so controls never import infra.
 
@@ -102,7 +102,7 @@ tests/ unit/  contract/  scenarios/  live/   (pytest markers: live)
 - `assessment/verify.py` (TB3): chunk in the run's retrieval set, verbatim quote, hash match. An untrusted chunk cited as authority is rejected. Rejected claims become unknowns, plus a `citation.rejected` event. Claims contradicting a control status become unknowns too.
 - Tests: repair succeeds on the 2nd attempt; three bad completions → UNAVAILABLE; forged quote, foreign chunk and untrusted-as-authority all rejected.
 
-### P6: Graph, approval gate, submit, idempotency (1.25h)
+### P6: Graph, approval gate, submit, idempotency (1.25h) ✅
 - `orchestration/budget.py` charges steps and calls and raises `BudgetExhausted` → FAILED, with no decision.
 - `orchestration/start_graph.py` and `resume_graph.py` are LangGraph StateGraphs with SqliteSaver, `thread_id=run_id`. Nodes receive Settings and ModelClient by injection. Checkpoints are deleted on terminal state.
 - `decision/fingerprint.py`: canonical JSON → sha256.

@@ -210,6 +210,22 @@ budget: {max_steps: 25, max_tool_calls: 25, max_model_calls: 10, max_retries_per
 | Restart safety | Rests on the idempotency key, not the checkpoint. A crashed non-paused run can simply be re-run, because read nodes are idempotent and the case-scoped key (§6) blocks a second decision. On startup, stale `RUNNING` rows become `FAILED` (`interrupted`) with an audit event; the caller re-POSTs the case (O7). |
 | Paused restart | `AWAITING_APPROVAL` survives restart via the checkpoint; the approval callback resumes it. |
 
+### 2.3a Implementation notes (our decisions, P6)
+
+| Topic | Decision |
+|---|---|
+| Graph state | Small, JSON-only `RunState` (ids, outcome, route, fingerprint, amount, verdict, grant, decision). Rich per-run objects (retrieval set, tool evidence, control results) live in a per-run `RunWork` and in the database, never in the checkpoint. |
+| Why that is enough | A crash before `AWAITING_APPROVAL` fails the run and the caller re-runs it (O7), so only the paused state must be resumable, and the resume graph needs only `RunState` plus the database. |
+| Resume input | The resume graph runs on the same `thread_id` (LangGraph restores the checkpoint) and is also passed every field it needs from the database, so a lost checkpoint cannot strand an approved run. |
+| Resume failures | A non-budget exception during resume leaves the run `AWAITING_APPROVAL` with its approval resolved and grant unconsumed; redelivering the callback completes it. Budget exhaustion fails the run. |
+| Callback concurrency | Approval callbacks for one run are serialised by a per-run lock (single process by design); the database constraints remain the backstop. |
+| Replay-safe response | The approval response is rendered only from the approval and decision rows and stored on the approval row; every later delivery returns it verbatim. |
+| Submit path | `submit_finance_decision` runs through the ToolRunner from the SUBMIT node (allow-list, deadline, retries with the same key). |
+| Budget on failure | Node counters are persisted in a `finally`, so a run that fails mid-node still reports what it spent. |
+| Checkpointer | `SqliteSaver` uses its own connection to the same SQLite file (WAL). |
+| Config loading | The Orchestrator receives the parsed registry and policy params from its caller; nothing under `orchestration/` opens YAML (§5.2). |
+| Known limitation | The approval amount is the invoice amount in invoice currency; approvers hold AUD limits, so a foreign-currency posting fails the authority check (fails closed). |
+
 ### 2.4 What LangGraph provides vs what our code enforces (§6)
 
 | LangGraph provides | Our code enforces |
