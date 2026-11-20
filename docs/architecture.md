@@ -335,7 +335,7 @@ Rules:
 | Document | Problem | Treatment |
 |---|---|---|
 | `delegated_financial_authority_v1` (FIN-POL-003-OLD) | Legitimate but stale | Excluded by the registry version pin and effective dating (`superseded_date` 2026-08-01). Controls record the applied version (FIN-POL-003 v4.0). |
-| `supplier_payment_instructions` (ADV-001) | Not in the registry, therefore untrusted. Its existence is evidence: urgency, bank change and a bypass request are FIN-POL-005 §3 indicators. | Retrieved on relevance, flagged `trust=untrusted` by registry provenance, not by filename or path, and neutralised at TB2. Citable as risk evidence, never as authority. |
+| `supplier_payment_instructions` (ADV-001) | Not in the registry, therefore untrusted. Its existence is evidence: urgency, bank change and a bypass request are FIN-POL-005 §3 indicators. | Retrieved on relevance, flagged `trust=untrusted` by registry provenance, not by filename or path, and neutralised at TB2. Citable as risk evidence, never as authority. As a **library** chunk it cannot raise C6 indicators: only the case's own text can (§5.1a). It counts when it arrives as the case's attachment (FIN-003). When it is only retrieved alongside an unrelated invoice, it is reported as an unknown. |
 | `travel_policy_extract` (ADV-002) | Irrelevant numeric distractor | Not in the registry; if retrieved it is flagged untrusted and cannot be cited as authority. |
 
 ### 3.6 Citations
@@ -459,6 +459,7 @@ class ModelClient(Protocol):
 ### 5.1a Implementation notes (our decisions, P5)
 
 - **Evidence sources** the model may cite: retrieved chunks (by chunk_id) and the case's own free text (`case:notes`, `case:attachment:N`), both labelled with trust. Case text is always untrusted, so it is citable only as risk evidence.
+- **Risk indicators cite case text only** (our decision). A model risk indicator feeds C6 only if it cites `case:notes` or `case:attachment:N`. One that cites a retrieved chunk is refused (`citation.rejected`, reason `indicator_not_case_text`) and listed in unknowns. Why: keyword search returns corpus documents on shared words, not provenance. In a live FIN-001 run, ADV-001 came back on "bank", "account" and "duplicate", and the model's indicators from it put a clean invoice on hold. The prompt states the rule, and `verify.py` enforces it, because a prompt is not a control (§4).
 - **Escaping:** `<`, `>`, `&` in untrusted text are escaped in the prompt so a document cannot close `<untrusted_evidence>` or forge a source tag; quotes are unescaped before the verbatim check.
 - **Redaction:** case text has account-like digit runs masked to `****last4`; chunk text is passed verbatim so its hash still matches.
 - **Plain-text adapter:** the anthropic adapter returns text; JSON validation and repair happen in `assess.py` for both adapters. SDK retries are off, so every attempt is charged and recorded. Server-side refusal fallback is on (`fallbacks="default"`); the serving model id is recorded.

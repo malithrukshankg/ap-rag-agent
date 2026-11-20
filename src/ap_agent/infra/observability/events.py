@@ -114,7 +114,11 @@ class CitationRejected(EventPayload):
     event_type: ClassVar[str] = "citation.rejected"
     chunk_id: str
     reason: Literal[
-        "not_in_retrieval_set", "quote_not_verbatim", "hash_mismatch", "untrusted_as_authority"
+        "not_in_retrieval_set",
+        "quote_not_verbatim",
+        "hash_mismatch",
+        "untrusted_as_authority",
+        "indicator_not_case_text",
     ]
 
 

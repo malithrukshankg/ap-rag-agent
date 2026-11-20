@@ -9,6 +9,13 @@ A citation stands only if all hold:
 A claim with any failing citation, with no citation, or that disputes its control's result
 (`agrees_with_control: false`) moves to unknowns. A risk indicator whose citation fails is
 dropped. Every rejection is reported so the caller can emit `citation.rejected`.
+
+Risk indicators must also cite the case's own text (`case:notes`, `case:attachment:N`).
+A retrieved library chunk shares words with the query, not provenance with this invoice:
+an adversarial document in the corpus says nothing about whether *this* invoice is
+fraudulent. Such indicators are not fed to C6; they are reported as an unknown so a human
+still sees them (our decision; architecture §3.5). The prompt asks for the same rule,
+but the prompt is guidance and this check is the control (§4 "validate model outputs").
 """
 
 import hashlib
@@ -23,7 +30,11 @@ from ap_agent.kernel.enums import CitationUse, IndicatorCode, Trust
 from ap_agent.kernel.types import Strict
 
 RejectReason = Literal[
-    "not_in_retrieval_set", "quote_not_verbatim", "hash_mismatch", "untrusted_as_authority"
+    "not_in_retrieval_set",
+    "quote_not_verbatim",
+    "hash_mismatch",
+    "untrusted_as_authority",
+    "indicator_not_case_text",
 ]
 
 
@@ -83,13 +94,25 @@ def verify_assessment(
             kept.append(claim)
 
     indicators: list[IndicatorCode] = []
+    not_case: dict[str, list[str]] = {}  # chunk_id → indicator codes, in order
     for ri in assessment.risk_indicators:
         reason = check_citation(pack, ri.chunk_id, ri.quote, CitationUse.RISK_EVIDENCE)
+        item = pack.item(ri.chunk_id)
+        if reason is None and item is not None and item.kind != "case_text":
+            reason = "indicator_not_case_text"
+            codes = not_case.setdefault(ri.chunk_id, [])
+            if ri.indicator.value not in codes:
+                codes.append(ri.indicator.value)
         if reason is None:
             if ri.indicator not in indicators:
                 indicators.append(ri.indicator)
         else:
             rejections.append(Rejection(chunk_id=ri.chunk_id, reason=reason))
+    for chunk_id, codes in not_case.items():
+        unknowns.append(
+            f"Retrieved document {chunk_id} contains fraud indicators ({', '.join(codes)}) "
+            "but is not part of this case; not counted in C6."
+        )
 
     return VerifiedAssessment(
         findings=kept,

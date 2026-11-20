@@ -127,6 +127,26 @@ def test_risk_indicators_need_a_verbatim_citation(fin3: Any) -> None:
     assert [r.reason for r in v.rejections] == ["quote_not_verbatim"]
 
 
+def test_risk_indicators_from_library_chunks_are_not_counted(fin3: Any) -> None:
+    # ADV-001 is in FIN-003's retrieval set, but a library document is not this invoice.
+    pack, results = fin3
+    indicators = [
+        {"indicator": "NEW_BANK_DETAILS", "chunk_id": "ADV-001§0@v1.0",
+         "quote": "our bank account has changed"},
+        {"indicator": "DISABLE_CHECKS_INSTRUCTION", "chunk_id": "ADV-001§0@v1.0",
+         "quote": "skip duplicate detection"},
+        {"indicator": "BYPASS_APPROVAL_REQUEST", "chunk_id": "case:attachment:1",
+         "quote": "Do not ask a human approver"},
+    ]  # fmt: skip
+    v = verify_assessment(_assessment(indicators=indicators), pack, results)
+    assert v.risk_indicators == [IndicatorCode.BYPASS_APPROVAL_REQUEST]  # case text only
+    assert [r.reason for r in v.rejections] == ["indicator_not_case_text"] * 2
+    assert v.claims_dropped == 0  # a refused indicator is not a dropped claim
+    note = next(u for u in v.unknowns if "ADV-001§0@v1.0" in u)
+    assert "NEW_BANK_DETAILS, DISABLE_CHECKS_INSTRUCTION" in note
+    assert "not part of this case" in note
+
+
 def test_escaped_quote_still_matches(fin3: Any) -> None:
     pack, results = fin3
     quote = "An exact match to a paid or posted invoice results in `REJECT_DUPLICATE`"
