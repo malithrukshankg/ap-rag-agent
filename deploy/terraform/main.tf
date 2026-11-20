@@ -68,7 +68,8 @@ resource "aws_ecr_lifecycle_policy" "app" {
 }
 
 # ---------------------------------------------------------------------------------------------
-# Network access: API port from one CIDR only. No SSH: shell access is via SSM Session Manager.
+# Network access: API port from allowed_cidr only (the deployer's IP by default; 0.0.0.0/0 for the
+# shared tester instance). No SSH: shell access is via SSM Session Manager.
 # ---------------------------------------------------------------------------------------------
 
 resource "aws_security_group" "app" {
@@ -79,7 +80,7 @@ resource "aws_security_group" "app" {
 
 resource "aws_vpc_security_group_ingress_rule" "api" {
   security_group_id = aws_security_group.app.id
-  description       = "API (unauthenticated: restricted to one CIDR)"
+  description       = "API (unauthenticated) from allowed_cidr"
   cidr_ipv4         = var.allowed_cidr
   ip_protocol       = "tcp"
   from_port         = 8000

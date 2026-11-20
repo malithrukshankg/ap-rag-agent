@@ -1,5 +1,5 @@
 output "api_url" {
-  description = "Base URL of the API (reachable from allowed_cidr only). Swagger UI at /docs."
+  description = "Base URL of the API (reachable from allowed_cidr). Swagger UI at /docs."
   value       = "http://${aws_instance.app.public_ip}:8000"
 }
 

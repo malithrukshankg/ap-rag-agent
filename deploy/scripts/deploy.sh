@@ -5,7 +5,8 @@
 # Usage:   AWS_PROFILE=<profile> deploy/scripts/deploy.sh
 # Env:     AWS_PROFILE (default "default"), AWS_REGION (default ap-southeast-2),
 #          MODEL_ADAPTER (anthropic|scripted, default anthropic),
-#          ANTHROPIC_API_KEY (else read from ./.env), ALLOWED_CIDR (default: your public IP/32),
+#          ANTHROPIC_API_KEY (else read from ./.env), ALLOWED_CIDR (default: your public IP/32;
+#          0.0.0.0/0 opens the unauthenticated API to everyone, for the shared tester instance),
 #          TRACING_ENABLED / TRACING_HOST (default: AP_TRACING__ENABLED / AP_TRACING__HOST
 #          from .env), with LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY when tracing is on.
 #          Secrets are synced to SSM only when they differ from the stored value.
@@ -91,7 +92,12 @@ fi
 
 # --- 2. Infrastructure -----------------------------------------------------------------------
 ALLOWED_CIDR="${ALLOWED_CIDR:-$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')/32}"
-log "Terraform apply (API open to $ALLOWED_CIDR only; tracing=$TRACING_ENABLED)"
+if [ "$ALLOWED_CIDR" = "0.0.0.0/0" ]; then
+  echo "WARNING: the API has no authentication and will be reachable from ANY address." >&2
+  echo "         Anyone can start runs and approve simulated postings; with MODEL_ADAPTER=anthropic" >&2
+  echo "         every run spends your Anthropic key. Set a spend limit in the Anthropic console." >&2
+fi
+log "Terraform apply (API open to $ALLOWED_CIDR; tracing=$TRACING_ENABLED)"
 terraform -chdir="$TF_DIR" init -input=false >/dev/null
 terraform -chdir="$TF_DIR" apply -input=false -auto-approve \
   -var "aws_profile=$AWS_PROFILE" -var "region=$AWS_REGION" \

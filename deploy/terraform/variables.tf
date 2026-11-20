@@ -17,15 +17,17 @@ variable "aws_profile" {
 
 variable "allowed_cidr" {
   description = <<-EOT
-    The only CIDR allowed to reach the API on port 8000. The API has no authentication
-    (approver identity is asserted by the caller, CLAUDE.md resolved ambiguity #6), so it must
-    never be open to 0.0.0.0/0. scripts/deploy.sh sets this to your current public IP /32.
+    The CIDR allowed to reach the API on port 8000. The API has no authentication (approver
+    identity is asserted by the caller, CLAUDE.md resolved ambiguity #6). scripts/deploy.sh
+    defaults to your current public IP /32. 0.0.0.0/0 is allowed as an explicit opt-in so
+    external testers can reach the shared demo instance: anyone can then start runs, approve
+    simulated postings and, in live mode, spend the Anthropic key. Nothing can move real money.
   EOT
   type        = string
 
   validation {
-    condition     = can(cidrhost(var.allowed_cidr, 0)) && var.allowed_cidr != "0.0.0.0/0"
-    error_message = "allowed_cidr must be a valid CIDR and must not be 0.0.0.0/0."
+    condition     = can(cidrhost(var.allowed_cidr, 0))
+    error_message = "allowed_cidr must be a valid CIDR."
   }
 }
 
