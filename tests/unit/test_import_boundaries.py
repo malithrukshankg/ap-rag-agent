@@ -113,3 +113,15 @@ def test_provider_sdk_imported_only_by_its_adapter(path: Path) -> None:
         return
     for name in _imports(path):
         assert name.split(".")[0] != "anthropic", f"{path.name} imports {name}"
+
+
+LANGFUSE_ADAPTER = SRC / "infra" / "observability" / "langfuse_tracer.py"
+
+
+@pytest.mark.parametrize("path", SOURCE_FILES, ids=lambda p: str(p.relative_to(SRC)))
+def test_langfuse_sdk_imported_only_by_its_adapter(path: Path) -> None:
+    """Tracing sits behind the Tracer port: the langfuse SDK appears in one file only."""
+    if path == LANGFUSE_ADAPTER:
+        return
+    for name in _imports(path):
+        assert name.split(".")[0] != "langfuse", f"{path.name} imports {name}"
