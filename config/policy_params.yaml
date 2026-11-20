@@ -1,0 +1,89 @@
+# Policy parameters used by the controls (architecture §4.1). Loaded by infra/settings.py.
+#
+# Every value is tagged with the corpus document, section and version it comes from, and the
+# LITERAL string that document uses. A control verifies the literal appears in a trusted
+# chunk retrieved in this run; if not, the control is INDETERMINATE. That makes retrieval
+# load-bearing and catches drift between this file and the corpus.
+#
+# Literals were copied from fixtures/corpus; tests/unit/test_policy_params.py re-checks each
+# one against the ingested index, so an edit to either side fails the build.
+
+params:
+  # C1 minimum evidence
+  c1_required_fields:
+    {value: "supplier legal name, invoice number, invoice date, currency, gross amount",
+     doc_id: FIN-POL-001, section: 2, version: "3.2",
+     literal: "supplier legal name, invoice number, invoice date, currency, gross amount"}
+
+  # C2 duplicate
+  c2_exact_match_rule:
+    {value: "REJECT_DUPLICATE", doc_id: FIN-POL-005, section: 2, version: "2.8",
+     literal: "exact match to a paid or posted invoice results in `REJECT_DUPLICATE`"}
+  c2_fuzzy_date_window_days:
+    {value: "14", doc_id: FIN-POL-005, section: 1, version: "2.8",
+     literal: "invoice date within 14 days"}
+  c2_fuzzy_amount_pct:
+    {value: "0.5", doc_id: FIN-POL-005, section: 1, version: "2.8",
+     literal: "amount variance below 0.5%"}
+
+  # C3 vendor and payment details
+  c3_hold_statuses:
+    {value: "BLOCKED,DORMANT,SANCTIONS_REVIEW,PENDING_VERIFICATION",
+     doc_id: FIN-POL-004, section: 4, version: "5.1",
+     literal: "`PENDING_VERIFICATION` vendors must be held"}
+  c3_bank_change_coapproval:
+    {value: "first subsequent payment", doc_id: FIN-POL-004, section: 2, version: "5.1",
+     literal: "The first subsequent payment requires Financial Control co-approval"}
+
+  # C4 three-way match (tolerances: lower of absolute and percentage of PO line value)
+  c4_goods_abs:
+    {value: "50", doc_id: FIN-POL-002, section: 2, version: "2.4",
+     literal: "AUD 50 absolute variance"}
+  c4_goods_pct:
+    {value: "1", doc_id: FIN-POL-002, section: 2, version: "2.4",
+     literal: "1% of the PO line value"}
+  c4_services_abs:
+    {value: "100", doc_id: FIN-POL-002, section: 2, version: "2.4",
+     literal: "AUD 100 or 2%"}
+  c4_services_pct:
+    {value: "2", doc_id: FIN-POL-002, section: 2, version: "2.4",
+     literal: "AUD 100 or 2%"}
+  c4_freight_abs:
+    {value: "75", doc_id: FIN-POL-002, section: 2, version: "2.4",
+     literal: "Freight may vary by up to AUD 75"}
+  c4_fx_hold:
+    {value: "hold unless conversion permitted", doc_id: FIN-POL-009, section: 3,
+     version: "1.6",
+     literal: "the case must be held unless the PO explicitly permits conversion"}
+  c4_nopo:
+    {value: "not automatically an emergency", doc_id: FIN-POL-012, section: 1,
+     version: "3.5", literal: "A missing PO is not automatically an emergency"}
+
+  # C5 authority (FIN-POL-003 §2 limits are AUD, total commitment including tax)
+  c5_limit_cost_centre_manager:
+    {value: "10000", doc_id: FIN-POL-003, section: 2, version: "4.0",
+     literal: "Cost Centre Manager | AUD 10,000"}
+  c5_limit_department_director:
+    {value: "50000", doc_id: FIN-POL-003, section: 2, version: "4.0",
+     literal: "Department Director | AUD 50,000"}
+  c5_limit_executive_director:
+    {value: "250000", doc_id: FIN-POL-003, section: 2, version: "4.0",
+     literal: "Executive Director | AUD 250,000"}
+  c5_limit_chief_financial_officer:
+    {value: "1000000", doc_id: FIN-POL-003, section: 2, version: "4.0",
+     literal: "Chief Financial Officer | AUD 1,000,000"}
+  c5_two_approvals:
+    {value: "two approvals", doc_id: FIN-POL-003, section: 3, version: "4.0",
+     literal: "require two approvals"}
+  c5_new_vendor_days:
+    {value: "30", doc_id: FIN-POL-003, section: 3, version: "4.0",
+     literal: "new vendor less than 30 days old"}
+  c5_fx_authority:
+    {value: "AUD at the corporate daily rate", doc_id: FIN-POL-009, section: 2,
+     version: "1.6",
+     literal: "Approval authority is assessed in AUD using the corporate daily rate for the invoice date"}
+
+  # C6 untrusted-content risk
+  c6_indicator_threshold:
+    {value: "2", doc_id: FIN-POL-005, section: 3, version: "2.8",
+     literal: "Escalate when two or more indicators occur"}

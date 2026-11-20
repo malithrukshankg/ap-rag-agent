@@ -13,8 +13,9 @@ import yaml
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, SecretStr
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
+from ap_agent.controls.params import PolicyParams
+from ap_agent.controls.policy import EscalationRule
 from ap_agent.evidence.rag.registry import PolicyRegistry
-from ap_agent.kernel.enums import ControlId, ExceptionCategory
 
 DEFAULT_APP_YAML = Path("config/app.yaml")
 
@@ -48,6 +49,7 @@ class ModelRepairSettings(_Cfg):
 class PolicySettings(_Cfg):
     entity: str
     base_currency: str = Field(pattern=r"^[A-Z]{3}$")
+    params_path: Path
 
 
 class CorpusSettings(_Cfg):
@@ -87,12 +89,6 @@ class ApiSettings(_Cfg):
 class LoggingSettings(_Cfg):
     level: str
     path: Path
-
-
-class EscalationRule(_Cfg):
-    source: ControlId | None = None
-    category: ExceptionCategory
-    target: str
 
 
 class Settings(BaseSettings):
@@ -158,3 +154,7 @@ def load_settings(app_yaml: Path = DEFAULT_APP_YAML) -> Settings:
 
 def load_registry(path: Path) -> PolicyRegistry:
     return PolicyRegistry.model_validate(_read_yaml(path))
+
+
+def load_policy_params(path: Path) -> PolicyParams:
+    return PolicyParams.model_validate(_read_yaml(path))

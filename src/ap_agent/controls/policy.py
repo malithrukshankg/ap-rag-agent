@@ -3,7 +3,8 @@
 from types import MappingProxyType
 from typing import Final
 
-from ap_agent.kernel.enums import RecommendationCode
+from ap_agent.kernel.enums import ControlId, ExceptionCategory, RecommendationCode
+from ap_agent.kernel.types import Strict
 
 # Higher wins: ESCALATE > REJECT_DUPLICATE > REJECT_INVALID > HOLD > APPROVE.
 OUTCOME_SEVERITY: Final = MappingProxyType(
@@ -24,3 +25,11 @@ MODEL_PROPOSAL_CEILING: Final = frozenset(
         RecommendationCode.ESCALATE_CONTROL_REVIEW,
     }
 )
+
+
+class EscalationRule(Strict):
+    """O5: one entry of the precedence list in config/app.yaml `escalation_precedence`."""
+
+    source: ControlId | None = None
+    category: ExceptionCategory
+    target: str

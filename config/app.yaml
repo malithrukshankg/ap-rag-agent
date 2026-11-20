@@ -10,8 +10,9 @@ model:
   prompt_version: assess-v1    # recorded on every run (config snapshot)
 
 # §4 bounded graph. Charged on every node transition and every tool/model attempt.
-# max_tool_calls is 25, not 15: 8 retrieval queries + 4 evidence tools + FIN-004's 3 retries
-# + submit exceeds 15 (architecture §2.2).
+# max_tool_calls is 25, not 15: up to 10 retrieval queries + 4 evidence tools + FIN-004's 3
+# retries + submit = 18, which exceeds 15 (architecture §2.2; 10 queries since P4 added
+# C3-STATUS and C5-LIMITS).
 budget:
   max_steps: 25
   max_tool_calls: 25
@@ -24,6 +25,7 @@ model_repair:
 policy:
   entity: Northstar Group
   base_currency: AUD
+  params_path: config/policy_params.yaml
 
 corpus:
   path: fixtures/corpus
