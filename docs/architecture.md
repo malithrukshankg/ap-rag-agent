@@ -106,6 +106,27 @@ Config sources: `config/app.yaml` (runtime), `config/policy_params.yaml` (policy
 | CLI | `ap ingest` only |
 | Deploy | AWS EC2 + Docker + EBS at `/data`; index baked into image |
 
+### 0.4 Code layout: one package per plane (our decision)
+
+Packages mirror §1's planes, so each trust boundary is a package boundary. Dependencies point inward only, enforced by `tests/unit/test_import_boundaries.py`.
+
+| Package | Plane / boundary | Holds | May import |
+|---|---|---|---|
+| `kernel/` | shared kernel | enums (closed vocabularies), `Strict` base, `Money`, `Currency` | nothing |
+| `intake/` | TB1 | `CaseRequest`, `Tainted` | kernel |
+| `evidence/` | evidence plane, TB2 | `rag/`, `tools/` (Tool contract, read tools), `Citation` | kernel, intake |
+| `controls/` | deterministic control core | `calc` (Calculator, Calculation), `ControlResult`, C1–C6, aggregation `policy`, confidence | kernel, intake, evidence |
+| `assessment/` | TB3, model boundary | `ModelClient` port, `ModelAssessment` schema, adapters, prompt, citation verifier | kernel, intake, evidence, controls |
+| `decision/` | TB4, decision gate | `routing` (recommendation → decision), approvals, `ApprovalGrant`, fingerprint, `submit_finance_decision`, `FinalResult` | the above + persistence/observability **ports** |
+| `infra/` | adapters | `persistence/` (protocols, records, `sqlite/`), `observability/`, settings | kernel → assessment |
+| `orchestration/` | runtime | LangGraph graphs, nodes, budget, ToolRunner | everything except api/cli |
+| `api/`, `cli.py` | API surface | FastAPI routes, `ap ingest` | orchestration, infra |
+
+Rules:
+- No plane imports the concrete store (`infra/persistence/sqlite`). Orchestration, api and cli wire it in through the `Store` protocol.
+- `decision/` is the only plane that touches the store, because TB4 sits next to the decision and audit store. It uses protocols only.
+- `submit_finance_decision` lives in `decision/`, not `evidence/tools/`: the evidence plane is read-only.
+
 **Not used (our decision):**
 
 | Tool | Why not |
@@ -412,7 +433,7 @@ class ModelClient(Protocol):
 
 ### 5.2 Injection boundary
 
-Nodes receive `Settings` and `ModelClient` by injection. Nothing under `graph/` or `controls/` reads `os.environ`, opens a YAML file, or imports a provider SDK. A test asserts this (§4 "provider config outside orchestration").
+Nodes receive `Settings` and `ModelClient` by injection. Nothing under `orchestration/` or `controls/` reads `os.environ`, opens a YAML file, or imports a provider SDK. A test asserts this (`tests/unit/test_import_boundaries.py`) (§4 "provider config outside orchestration").
 
 ---
 
@@ -555,7 +576,7 @@ class FinalResult(BaseModel):
 
 **Crash test:** inject a crash after the ledger write and before the decisions insert, restart, assert exactly one posting.
 
-**Repositories:** everything sits behind repository `Protocol`s; `persistence/postgres/` is a stub satisfying the protocol.
+**Repositories:** everything sits behind repository `Protocol`s (`infra/persistence/protocols.py`). That protocol is the seam for the Postgres scale path (§13); no second implementation is shipped (our decision).
 
 ---
 
