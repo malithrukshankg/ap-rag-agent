@@ -5,7 +5,7 @@ Internal working document. Builds `docs/architecture.md` phase by phase.
 ## Context
 `docs/architecture.md` holds the final design for the take-home AP agent. This plan builds the design within the 8-hour timebox (§8). Phases follow the architecture's "never cut" list, so the approval gate, idempotency, redaction, citations, the superseded filter, budget/retry and restart-resume land before the polish items. Each phase ends green under `make test`.
 
-**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3–P8 pending.
+**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4–P8 pending.
 
 **Open before P4 (found in P2):** the C5 query ("delegated financial authority approval limit threshold") retrieves FIN-POL-003 §1, §3, §4, §5 but never §2, the authority limits table: its text is a markdown table sharing no terms with the query (architecture §3.7 "BM25 doesn't read tables"). Prefixing chunks with the document title was tried and does not fix it. Under the literal check, C5 would be INDETERMINATE on every case. Needs a decision before P4.
 
@@ -72,7 +72,7 @@ tests/ unit/  contract/  scenarios/  live/   (pytest markers: live)
   - re-ingest is a no-op;
   - recall@5 helper.
 
-### P3: Tools and fixtures (1h)
+### P3: Tools and fixtures (1h) ✅
 - `orchestration/tool_runner.py` ToolRunner: input/output schema validation, timeout (thread + deadline), transient-only retry with bounded backoff, budget charge per attempt, `tool_calls` row and audit event with duration and outcome.
 - `evidence/tools/faults.py`: per-case `faults: {tool: [timeout, transient, ok…]}`, consumed per attempt.
 - Read tools in `evidence/tools/` backed by `fixtures/systems/*.json`. `vendor.py` returns `PaymentDetails{last4, bank_country, hmac_fingerprint, changed_at}`, with the HMAC key from Settings. Full numbers stay in fixture JSON only.
