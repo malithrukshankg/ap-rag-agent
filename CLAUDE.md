@@ -78,7 +78,7 @@ These rules bind the build, but they are interpretations, not brief text.
     - **Scale limitation:** at production volume, capture would be tiered. Control results, decisions and audit events are retained for every run under FIN-POL-010's retention rule. Full prompt capture is kept for exceptions and approval-gated runs and sampled for clean ones. Prompt bodies move to object storage under a lifecycle policy. With five fixture cases, full capture costs almost nothing, so we capture everything.
 
 ## Open questions
-None outstanding.
+None outstanding. Gaps O1–O7 found while writing the architecture are resolved and recorded in `docs/architecture.md` §15 (our decisions): O1 headingless docs become one chunk; O2 FIN-POL-003-OLD pinned to null in the registry; O3 bank change is recent if after the last paid invoice; O4 model proposal capped at HOLD/ESCALATE; O5 fixed escalation precedence in config; O6 two repair attempts; O7 stale RUNNING runs marked FAILED on startup, caller re-runs.
 
 ## Required deliverables
 - [ ] Runnable source code plus complete instructions to provision/configure, ingest documents, start the app and run the tests (§7)

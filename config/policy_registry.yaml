@@ -1,0 +1,28 @@
+# Trusted-document registry (architecture §3.3). Authoritative over front-matter `status`,
+# which is self-declared and never used as a filter.
+#
+#   doc_id NOT listed → always eligible for retrieval, trust=untrusted, citable only as risk evidence.
+#   doc_id listed     → eligible only if version == pinned_version AND effective-dated for the
+#                       invoice date AND jurisdiction in (au, global); trust=trusted.
+#
+# Versions are quoted strings: "3.10" must not become 3.1.
+
+documents:
+  FIN-POL-001: {pinned_version: "3.2", doc_type: policy}
+  FIN-POL-002: {pinned_version: "2.4", doc_type: policy}
+  FIN-POL-003: {pinned_version: "4.0", doc_type: policy}
+  FIN-POL-004: {pinned_version: "5.1", doc_type: policy}
+  FIN-POL-005: {pinned_version: "2.8", doc_type: policy}
+  FIN-POL-006: {pinned_version: "3.0", doc_type: policy}
+  FIN-POL-007: {pinned_version: "1.9", doc_type: policy}
+  FIN-POL-008: {pinned_version: "2.1", doc_type: policy}
+  FIN-POL-009: {pinned_version: "1.6", doc_type: policy}
+  FIN-POL-010: {pinned_version: "4.3", doc_type: policy}
+  FIN-POL-011: {pinned_version: "2.7", doc_type: policy}
+  FIN-POL-012: {pinned_version: "3.5", doc_type: policy}
+  # O2: the superseded authority matrix has its own doc_id. It is listed so that it is
+  # governed by the registry, and pinned to null so no version is ever eligible.
+  FIN-POL-003-OLD: {pinned_version: null, superseded_by: FIN-POL-003, doc_type: policy}
+
+# Deliberately absent (untrusted by provenance, never by filename or path):
+#   ADV-001 supplier payment instructions, ADV-002 travel policy extract.

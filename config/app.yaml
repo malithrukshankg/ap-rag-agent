@@ -1,0 +1,72 @@
+# Runtime configuration (architecture §0.2). Loaded only by src/ap_agent/settings.py.
+# Secrets never live here: ANTHROPIC_API_KEY and AP_PAYMENT_HMAC_KEY come from the environment.
+
+model:
+  adapter: scripted            # scripted (stable tier, no key) | anthropic (live tier)
+  id: claude-opus-5-5
+  effort: medium               # output_config.effort; set explicitly (Opus 5.5 default is medium)
+  max_tokens: 16000            # non-streaming request ceiling
+  timeout_s: 120
+  prompt_version: assess-v1    # recorded on every run (config snapshot)
+
+# §4 bounded graph. Charged on every node transition and every tool/model attempt.
+# max_tool_calls is 25, not 15: 8 retrieval queries + 4 evidence tools + FIN-004's 3 retries
+# + submit exceeds 15 (architecture §2.2).
+budget:
+  max_steps: 25
+  max_tool_calls: 25
+  max_model_calls: 10
+  max_retries_per_call: 3
+
+model_repair:
+  max_repair_attempts: 2       # O6: repairs after the initial call
+
+policy:
+  entity: Northstar Group
+  base_currency: AUD
+
+corpus:
+  path: fixtures/corpus
+  registry_path: config/policy_registry.yaml
+
+retrieval:
+  top_k: 5
+
+# Architecture §7. Retry counts are capped by budget.max_retries_per_call.
+tools:
+  fixtures_dir: fixtures/systems
+  backoff_s: 0.1
+  retrieve_finance_documents: {timeout_s: 2.0, max_retries: 2}
+  get_vendor_record:          {timeout_s: 2.0, max_retries: 3}
+  get_purchase_order:         {timeout_s: 2.0, max_retries: 3}
+  check_invoice_history:      {timeout_s: 2.0, max_retries: 3}
+  get_fx_rate:                {timeout_s: 2.0, max_retries: 3}
+  submit_finance_decision:    {timeout_s: 5.0, max_retries: 3}   # retried with the same idempotency key
+
+storage:
+  sqlite_path: var/ap.db       # container overrides to /data/ap.db (AP_STORAGE__SQLITE_PATH)
+
+api:
+  host: 127.0.0.1
+  port: 8000
+
+logging:
+  level: INFO
+  path: var/logs/ap.jsonl
+
+# O5: when several controls tie at the top outcome floor, the first matching entry sets the
+# single primary exception_category (FIN-POL-007 §1) and escalation_target (FIN-POL-007 §3).
+# Every other exception is still listed in the result.
+# FIN-POL-007 §3 names no owner for DUPLICATE_RISK or TAX_QUERY; Accounts Payable is used.
+escalation_precedence:
+  - {source: C6, category: OTHER_CONTROL_RISK, target: Financial Crime and Controls}  # suspected fraud
+  - {category: BANK_CHANGE,       target: Vendor Governance}
+  - {category: AUTHORITY_GAP,     target: Financial Control}
+  - {category: DUPLICATE_RISK,    target: Accounts Payable}
+  - {category: VENDOR_BLOCK,      target: Vendor Governance}
+  - {category: MISSING_PO,        target: Requester}
+  - {category: MISSING_RECEIPT,   target: Receipter}
+  - {category: PRICE_VARIANCE,    target: Requester}
+  - {category: QUANTITY_VARIANCE, target: Receipter}
+  - {category: TAX_QUERY,         target: Accounts Payable}
+  - {category: OTHER_CONTROL_RISK, target: Financial Control}

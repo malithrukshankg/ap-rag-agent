@@ -2,7 +2,7 @@
 
 Internal working document. Decisions here are final; build from them. The short reviewer-facing design note (§7) is derived from this.
 
-**Conventions.** `§n` = section of `docs/brief.md` (a brief requirement). `FIN-POL-xxx §n` = section of a corpus policy (the system-under-test's policy, ingested as data). **(our decision)** = a choice we made, recorded for §11 traceability. **(provisional)** = a gap filled while writing this document; see §15.
+**Conventions.** `§n` = section of `docs/brief.md` (a brief requirement). `FIN-POL-xxx §n` = section of a corpus policy (the system-under-test's policy, ingested as data). **(our decision)** = a choice we made, recorded for §11 traceability. `O1`–`O7` = resolved gaps, see §15.
 
 **Principle (our decision).** Code decides, the model describes. The model is advisory and can only make an outcome stricter.
 
@@ -186,7 +186,7 @@ budget: {max_steps: 25, max_tool_calls: 25, max_model_calls: 10, max_retries_per
 | Checkpoint key | LangGraph `thread_id = run_id` |
 | Lifetime | Deleted when the run reaches a terminal state. Only `AWAITING_APPROVAL` runs stay resumable (our decision). |
 | API state | `runs.status` and `runs.current_node` persist for every run, terminal or not. |
-| Restart safety | Rests on the idempotency key, not the checkpoint. A crashed non-paused run can simply be re-run, because read nodes are idempotent and the case-scoped key (§6) blocks a second decision. |
+| Restart safety | Rests on the idempotency key, not the checkpoint. A crashed non-paused run can simply be re-run, because read nodes are idempotent and the case-scoped key (§6) blocks a second decision. On startup, stale `RUNNING` rows become `FAILED` (`interrupted`) with an audit event; the caller re-POSTs the case (O7). |
 | Paused restart | `AWAITING_APPROVAL` survives restart via the checkpoint; the approval callback resumes it. |
 
 ### 2.4 What LangGraph provides vs what our code enforces (§6)
@@ -215,7 +215,7 @@ Omitted (our decision): reranking, query expansion, a facet taxonomy. At 16 docu
 |---|---|
 | Parse | YAML front matter. Field names kept as the corpus spells them: `document_id`, `version`, `effective_date`, `superseded_date`, `status`, `classification`, `jurisdiction` |
 | Normalise | `jurisdiction` lowercased at ingestion |
-| Chunk | One chunk per `##` section; `n` = the section's number. A document with no `##` heading (FIN-POL-003-OLD, ADV-001, ADV-002) becomes one chunk, `n = 0` **(provisional)** |
+| Chunk | One chunk per `##` section; `n` = the section's number. A document with no `##` heading (FIN-POL-003-OLD, ADV-001, ADV-002) becomes one chunk, `n = 0` (O1) |
 | Chunk id | `{doc_id}§{n}@v{version}` |
 | Hash | sha256 of chunk text stored per chunk |
 | Write | `chunks`, `chunks_fts`, and `policy_registry` (loaded from YAML) |
@@ -258,7 +258,7 @@ WHERE chunks_fts MATCH :terms
 Registry sketch:
 ```yaml
 FIN-POL-003:     {pinned_version: "4.0", doc_type: policy}
-FIN-POL-003-OLD: {pinned_version: null, superseded_by: FIN-POL-003, doc_type: policy}  # (provisional) see §15
+FIN-POL-003-OLD: {pinned_version: null, superseded_by: FIN-POL-003, doc_type: policy}  # O2
 # … FIN-POL-001 … FIN-POL-012 pinned to their current versions
 # ADV-001, ADV-002: deliberately absent → untrusted
 ```
@@ -346,7 +346,7 @@ class ControlResult(BaseModel):
 |---|---|---|
 | C1 minimum evidence | Required fields present (FIN-POL-001 §2) | Missing supporting evidence → `HOLD_FOR_INFORMATION`; unprocessable (no invoice ref, amount or vendor) → `REJECT_INVALID` |
 | C2 duplicate | Exact and fuzzy match (FIN-POL-005 §1–2) | Exact match to a paid or posted invoice → `REJECT_DUPLICATE` citing FIN-POL-005 §2; probable fuzzy match → `HOLD_FOR_INFORMATION` with both record ids |
-| C3 vendor and payment details | Status (FIN-POL-004 §4); bank-change recency; the attachment's claimed account vs master `last4` / `hmac_fingerprint`, compared in code | Non-`ACTIVE` → `HOLD_FOR_INFORMATION`; bank mismatch or recent change → `ESCALATE_CONTROL_REVIEW` (`BANK_CHANGE`) |
+| C3 vendor and payment details | Status (FIN-POL-004 §4); bank-change recency (O3: changed since last paid invoice); the attachment's claimed account vs master `last4` / `hmac_fingerprint`, compared in code | Non-`ACTIVE` → `HOLD_FOR_INFORMATION`; bank mismatch or recent change → `ESCALATE_CONTROL_REVIEW` (`BANK_CHANGE`) |
 | C4 three-way match | Per line and total; qty ≤ received; variance ≤ min(AUD 50, 1%) (FIN-POL-002 §2); FX per FIN-POL-009 §2–3; PO tolerance and policy tolerance both recorded, disagreement flagged, policy wins (RA#8) | Missing receipt → `HOLD_FOR_INFORMATION`; PO unavailable → `INDETERMINATE`; no PO → consult FIN-POL-012 (C4-NOPO) before holding |
 | C5 authority | Required role and limit for the base-currency total (FIN-POL-003 §2); two-approver flag (FIN-POL-003 §3) | Two approvers required → `ESCALATE_CONTROL_REVIEW`; there is no multi-approver posting path |
 | C6 untrusted-content risk | Deterministic indicator patterns plus model-flagged indicators (FIN-POL-005 §3–4) | Two or more indicators → `ESCALATE_CONTROL_REVIEW` |
@@ -359,7 +359,8 @@ Applicability is a deterministic field check, never a classification. Every cont
 
 Order: `ESCALATE_CONTROL_REVIEW > REJECT_DUPLICATE > REJECT_INVALID > HOLD_FOR_INFORMATION > APPROVE_FOR_POSTING`.
 
-- Outcome = highest floor across all controls **and** the model's proposal.
+- Outcome = highest floor across all controls **and** the model's proposal. The proposal is first capped at `HOLD_FOR_INFORMATION` / `ESCALATE_CONTROL_REVIEW` (O4).
+- Primary `exception_category` and `escalation_target` come from `escalation_precedence` in config (O5).
 - `APPROVE_FOR_POSTING` only if every applicable control is `PASS`.
 - Any `INDETERMINATE` → at least `HOLD_FOR_INFORMATION`.
 - Nothing is inferred to fill a gap (FIN-POL-001 §5).
@@ -405,7 +406,7 @@ class ModelClient(Protocol):
 
 | Failure | Handling |
 |---|---|
-| Malformed or schema-invalid | Repair retry with the validation errors, max 2 attempts, each charged to the budget; then assessment `UNAVAILABLE`, floor raised to `HOLD_FOR_INFORMATION`, audit event. |
+| Malformed or schema-invalid | Repair retry with the validation errors, max 2 repair attempts after the initial call (O6), each charged to the budget; then assessment `UNAVAILABLE`, floor raised to `HOLD_FOR_INFORMATION`, audit event. |
 | Schema-valid but wrong | Structural limits: the model cannot emit numbers or control statuses that reach the result. Its proposal is combined as `max(control_floor, proposal)`, so it can only tighten. Claims contradicting a control status drop to unknowns. Residual risk: a wrong narrative. It is measured by the live eval, not prevented. |
 | Unverifiable citation | Claim dropped to unknowns, `citation.rejected` event, confidence lowered. An untrusted chunk cited as `authority` is rejected; it may be cited as `risk_evidence`. |
 
@@ -680,14 +681,14 @@ FIN-005 is a genuinely concurrent double callback via httpx: one decision, ident
 
 ---
 
-## 15. Open items (provisional points to confirm)
+## 15. Resolved items (user-confirmed; all our decisions)
 
-| # | Item | Provisional position in this document |
-|---|---|---|
-| O1 | Documents with no `##` heading (FIN-POL-003-OLD, ADV-001, ADV-002) | One chunk with `n = 0`. Without this, ADV-001 is never indexed and FIN-003 cannot surface it. |
-| O2 | FIN-POL-003-OLD has its own doc_id, so it is not a version of FIN-POL-003. Under "not in the registry → always returned" it would be returned as untrusted, which breaks "superseded-returned count = 0" | Listed in the registry with `pinned_version: null` (never eligible) and `superseded_by: FIN-POL-003` |
-| O3 | C3 "recent" bank change has no defined window | Not yet set |
-| O4 | The model's proposal can raise the outcome to `REJECT_INVALID`, which maps to an agent-initiated `REJECTED`, although that is reserved for structurally invalid cases | Not yet set |
-| O5 | One primary `exception_category` and `escalation_target` when several controls tie at the top floor (FIN-POL-007 §1 requires one) | Not yet set |
-| O6 | "Repair retry … max 2 attempts" | Read as 2 repair attempts after the initial call |
-| O7 | A crashed non-paused run is "simply re-run": automatic on startup or by the caller, and the fate of its stale `RUNNING` row | Not yet set |
+| # | Item | Resolution | Where it lives |
+|---|---|---|---|
+| O1 | Documents with no `##` heading (FIN-POL-003-OLD, ADV-001, ADV-002) | One chunk with `n = 0`. Without this, ADV-001 is never indexed and FIN-003 cannot surface it. | `rag/ingest.py` (P2) |
+| O2 | FIN-POL-003-OLD has its own doc_id, so it is not a version of FIN-POL-003 | Listed in the registry with `pinned_version: null` (never eligible) and `superseded_by: FIN-POL-003` | `config/policy_registry.yaml` |
+| O3 | C3 "recent" bank change | Recent = `changed_at` is after the vendor's last paid invoice (FIN-POL-004 §2: the first payment after a change needs Financial Control co-approval). No numeric window. | `controls/c3` (P4) |
+| O4 | Model proposal raising the outcome to `REJECT_*` | The model's proposal is capped at `HOLD_FOR_INFORMATION` or `ESCALATE_CONTROL_REVIEW`. `REJECT_DUPLICATE` and `REJECT_INVALID` come only from controls, so injected text cannot make the agent reject a supplier. | `controls/aggregate.py` (P4) |
+| O5 | One primary `exception_category` and `escalation_target` when controls tie at the top floor | Fixed precedence, first match wins: C6 suspected fraud (Financial Crime and Controls) > BANK_CHANGE > AUTHORITY_GAP > DUPLICATE_RISK > VENDOR_BLOCK > PO/receipt categories > TAX_QUERY > OTHER_CONTROL_RISK. All other exceptions are still listed. | `config/app.yaml` `escalation_precedence` |
+| O6 | "Repair retry … max 2 attempts" | 2 repair attempts after the initial call (at most 3 model calls per assessment) | `config/app.yaml` `model_repair.max_repair_attempts` |
+| O7 | A crashed run that wasn't paused | On startup, stale `RUNNING` rows become `FAILED` (reason `interrupted`) with an audit event. The caller re-POSTs the case and gets a new run_id. The case-scoped idempotency key prevents a second decision. | startup hook (P6) |
