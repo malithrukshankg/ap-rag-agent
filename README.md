@@ -289,6 +289,73 @@ Four operations (§2), with schemas published as OpenAPI at `/docs`:
 | `POST /runs/{run_id}/approval` | Approve or reject a pending posting: `{verdict, approver_id, decision_fingerprint}`. Replay-safe. |
 | `POST /evals`, `GET /evals/latest` | Run and report the evaluation cases |
 
+### Request formats
+
+**`POST /runs`**: start a run. The body is a `case` and an optional `simulation` block:
+
+```json
+{
+  "case": {
+    "case_id": "FIN-001",
+    "invoice_ref": "INV-1001-0815",
+    "vendor_id": "V-1001",
+    "vendor_name": "Acme Office Supplies Pty Ltd",
+    "amount": "6050.00",
+    "tax_amount": "550.00",
+    "currency": "AUD",
+    "invoice_date": "2026-08-15",
+    "po_ref": "PO-1001",
+    "requested_by": "u-req-01",
+    "lines": [
+      {"line_no": 1, "description": "Ergonomic office chair", "quantity": "20",
+       "unit_price": "245.00", "line_total": "4900.00", "po_line_no": 1},
+      {"line_no": 2, "description": "LED desk lamp", "quantity": "10",
+       "unit_price": "60.00", "line_total": "600.00", "po_line_no": 2}
+    ],
+    "notes": "optional free text",
+    "attachments": [{"name": "remittance.txt", "text": "optional free text"}]
+  },
+  "simulation": {"faults": {}, "scripted_model": []}
+}
+```
+
+- **Required:** `case_id`, `invoice_ref`, `vendor_id`, `vendor_name`, `amount` (gross), `currency`, `invoice_date`, `requested_by`.
+- **Optional:** `tax_amount`, `po_ref`, `lines`, `notes`, `attachments`.
+- Send amounts as strings. They are parsed as decimals, never floats.
+- `notes`, `attachments` and line descriptions are untrusted case text. They are evidence, never instructions.
+- `simulation` can be omitted (see the note below the walkthrough).
+- The fixture vendors and POs are in `fixtures/systems/`, and each `fixtures/cases/FIN-00x.json` has a ready-made `case`.
+
+The reply is `201` with the run view: `run_id`, `status`, `current_node`, `budget`, `result` and `audit_events`.
+
+**`GET /runs/{run_id}`**: no body. Add `?timeline=1` for a compact event timeline.
+
+**`POST /runs/{run_id}/approval`**: approve or reject a run whose status is `AWAITING_APPROVAL`:
+
+```json
+{
+  "verdict": "approve",
+  "approver_id": "A-CCM-01",
+  "decision_fingerprint": "0336c973682684d92c9f99a1b9f6873ed93b8054fd1b1b200497cd3d6aa2608a"
+}
+```
+
+- `verdict` is `approve` or `reject`.
+- `approver_id` must exist in the simulated register `fixtures/systems/approvers.json`. Use `A-CCM-01` (up to AUD 10,000), `A-DD-01` (up to AUD 50,000) or `A-FC-01` (up to AUD 250,000).
+- `decision_fingerprint` is a SHA-256 hex string (64 characters) that pins the approval to exactly what the approver reviewed. It is computed in code over the case id, invoice ref, vendor, amount, currency, the recommended outcome, every control's status, and the hashes of the cited evidence.
+  - **Getting it:** the run's response carries it as `result.decision_fingerprint`. The same value is in `result.approval.decision_fingerprint` while the approval is `PENDING`, and in the `approval.requested` audit event. Read it from the `POST /runs` reply or from `GET /runs/{run_id}`, and send it back unchanged.
+  - **Why it's required:** if the evidence or outcome changed after the approver looked, the fingerprints no longer match, the approval is refused, and the run stays pending.
+
+The approval responses:
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | Accepted. Every repeat of the same approval returns the same body. | `{"run_id", "accepted": true, "response": {"approval_id", "approval_status", "approver_id", "verdict", "decided_at", "decision", "decision_id", "idempotency_key", "ledger_ref", "run_id"}}` |
+| `409` | A check failed; the run stays `AWAITING_APPROVAL` | `{"accepted": false, "failed_check": …}`. `failed_check` is one of: `fingerprint_mismatch`, `approver_unknown_or_inactive`, `authority_limit`, `approver_raised_case`, `delegation_not_valid` |
+| `404` | Unknown `run_id` | `{"detail": …}` |
+
+**`POST /evals`**: no body. It runs FIN-001 to FIN-005 against the configured model adapter and returns the metrics and per-case checks. **`GET /evals/latest`** returns the last report without re-running, or `404` if no evaluation has been run yet.
+
 FIN-001 end to end (bash; needs `jq`):
 
 ```bash
@@ -393,7 +460,18 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
 
 ## AI tool use, time spent, and material not authored (§7, §11)
 
-- **AI tools.** Claude Code (Claude Opus 5.5) was used throughout as a pair programmer: to transcribe the brief, draft and critique the architecture, generate code and tests against that design, and draft documentation, including this README and the design note. Commits with substantial AI contribution carry a `Co-Authored-By: Claude` trailer. Every design decision was reviewed and is recorded with its reasoning in `docs/architecture.md` and `CLAUDE.md`. **TODO (author): adjust this description to match how you actually worked.**
+- **AI tools.** I used Claude Code (Claude Opus 5.5) as a pair programmer.
+  - **My part:** I read the brief and set the project rules and constraints (`CLAUDE.md`). I made the design decisions recorded in `docs/architecture.md` and resolved the brief's ambiguities (CLAUDE.md "Resolved ambiguities"). The main decisions:
+    - LangGraph with an explicit approval pause instead of `interrupt()`;
+    - SQLite for persistence and idempotency;
+    - BM25 retrieval with a policy-registry pre-filter;
+    - "code decides, the model describes".
+
+    I wrote the FIN-001…005 test cases and directed the work phase by phase.
+  - **Claude's part:** transcribing the brief, drafting and critiquing the architecture with me, generating the implementation and tests phase by phase against that design, and drafting the documentation. Commits with substantial AI contribution carry a `Co-Authored-By: Claude` trailer.
+  - **How I verified it:** I reviewed each phase before committing. The stable suite (709 tests) and strict linting (ruff, mypy --strict) had to pass. I also ran the five cases against the live model. That exposed two real defects, which I then had fixed:
+    - O8: an ungrounded model escalation overriding a duplicate rejection;
+    - risk indicators being taken from retrieved documents rather than from the case's own text.
 - **Time spent.** **About 6 hours of active work**, not counting the time spent writing the final submission documents (README, design note, controls document, diagram and transcripts). The git history shows the work in one day, 2026-11-20:
 
   | Window (commit times) | Work |
@@ -406,8 +484,7 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
   That span is about 11.5 hours from first to last commit, including breaks between the windows. Commits were made in batches, so the windows show when work was committed, not exactly when it was done.
 - **Not authored by me.**
   - Open-source libraries, pinned in `uv.lock` / `requirements.lock`: Pydantic, pydantic-settings, FastAPI, uvicorn, LangGraph and langgraph-checkpoint-sqlite, the Anthropic SDK, structlog, PyYAML, httpx, Langfuse; dev tools pytest, ruff, mypy.
-  - The synthetic policy corpus in `fixtures/corpus/`. **TODO (author): state its origin.**
-  - The brief (`docs/Take_Home_Test.pdf`).
+  - The brief (`docs/Take_Home_Test.pdf`), and the synthetic Northstar Group policy corpus in `fixtures/corpus/`, which was provided with it. It includes the adversarial (ADV-001, ADV-002) and superseded (FIN-POL-003-OLD) documents. The registry, policy parameters and case fixtures built on the corpus are my own.
 
 ## Repository layout
 

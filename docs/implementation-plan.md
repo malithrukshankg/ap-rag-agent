@@ -5,7 +5,7 @@ Internal working document. Builds `docs/architecture.md` phase by phase.
 ## Context
 `docs/architecture.md` holds the final design for the take-home AP agent. This plan builds the design within the 8-hour timebox (§8). Phases follow the architecture's "never cut" list, so the approval gate, idempotency, redaction, citations, the superseded filter, budget/retry and restart-resume land before the polish items. Each phase ends green under `make test`.
 
-**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6 ✅ · P7 ✅ · P8 ✅ (author still to fill in time spent, corpus origin and screenshots).
+**Status:** P0 ✅ · P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6 ✅ · P7 ✅ · P8 ✅ (AWS screenshots still to capture).
 
 **Resolved in P4:** the C5 limits-table gap found in P2 (and the same gap for C3's FIN-POL-004 §4) is fixed by two always-on query arms, C3-STATUS and C5-LIMITS (architecture §3.4). Confidence moved to `decision/confidence.py` because it returns the `Confidence` type from `decision/`; `EscalationRule` moved to `controls/policy.py` so controls never import infra.
 

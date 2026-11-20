@@ -91,7 +91,7 @@ None outstanding. Gaps O1–O7 found while writing the architecture are resolved
 - [x] Automated tests for core orchestration, retrieval grounding and safety, with stable unit/contract tests kept separate from model-dependent integration/eval runs (§7)
 - [x] Fixtures for FIN-001 to FIN-005 (§5)
 - [x] Sample output or short transcript: one successful flow and one exception/approval flow (§7)
-- [ ] Declaration of AI tool use, approximate time spent, and any code/libraries/generated material not authored (§7, §11)
+- [x] Declaration of AI tool use, approximate time spent, and any code/libraries/generated material not authored (§7, §11)
 - [x] Documented unfinished work and deliberate trade-offs (§8)
 
 ## Required interface and tools
