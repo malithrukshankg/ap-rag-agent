@@ -135,7 +135,7 @@ Rules:
 | Tool | Why not |
 |---|---|
 | LiteLLM | One provider; the scripted adapter is bespoke anyway. |
-| Langfuse | Optional; end-of-day only if ahead (§13). |
+| Langfuse | Added late as an optional, off-by-default tracer (§13), not as the audit store. |
 | Postgres / pgvector | SQLite meets §8 "simple local persistence"; Postgres is the scale path (§13). |
 | sqlite-vec / fastembed | 16 documents; dense retrieval doesn't change recall at this size (§3). |
 | CI | Out of timebox; `make test` is the reviewer path. |
@@ -692,6 +692,8 @@ FIN-005 is a genuinely concurrent double callback via httpx: one decision, ident
 ## 13. Extensions, cuts, scale limits (§8, §10, §11)
 
 **§10 extensions (two, both falling out of required work):** fault-injection tests; a run timeline rendered from `audit_events`. Langfuse only if ahead at the end.
+
+**Langfuse tracing (added):** a `Tracer` port (`infra/observability/tracing.py`) with one adapter (`langfuse_tracer.py`, the only file importing the SDK). It is observe-only and off by default (`tracing.enabled`). Each audit event is forwarded *after* its `audit_events` row is written, and each model attempt *after* its `model_calls` row, so SQLite remains the system of record (§2.6) and Langfuse is a viewer. One trace per run, with the trace id derived from `run_id`, so a run resumed after approval, even in another process, joins the same trace. Payloads are the same allow-listed event models as the audit log (§4 safe logging). Prompt and completion text are withheld unless `tracing.send_prompts` is true. Even then only the redacted prompt is sent, never account numbers (Resolved ambiguity #3), but invoice amounts and vendor names leaving the host is opt-in (FIN-POL-010 §2). The Orchestrator wraps every tracer in `FailSafeTracer`: a tracer error is logged by class and swallowed, so tracing can never change, delay or fail a run (tested with a tracer that always raises). Counted against §10 as an addition beyond the two extensions above; it adds no control and does not compensate for any.
 
 **Cut order:** docker-compose → REVALIDATE node → live-tier polish → timeline → Langfuse.
 
