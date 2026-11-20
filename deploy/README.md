@@ -54,18 +54,6 @@ curl -s -X POST $($TF api_url)/evals | jq '{passed, cases: [.cases[] | {case_id,
 ```
 On the instance (`$($TF ssm_session_command)`), `findmnt /data` shows the EBS volume and `sudo ls /data` shows `ap.db` and `logs/`.
 
-## Screenshots
-Placeholders, to be captured from a live deployment and saved under `deploy/screenshots/`:
-
-| File | Shows |
-|---|---|
-| `01-ec2-instance.png` | EC2 console: the `ap-rag-agent` instance running, IMDSv2 required |
-| `02-ebs-data-volume.png` | EBS console: the `ap-rag-agent-data` volume, encrypted, attached as `/dev/sdf` |
-| `03-security-group.png` | Inbound rule: port 8000 from `allowed_cidr` (0.0.0.0/0 on the shared tester instance); no SSH rule |
-| `04-swagger.png` | `<api_url>/docs` served from the instance |
-| `05-evals.png` | `POST /evals` response on AWS: all five cases passing |
-| `06-destroy.png` | `destroy.sh` output: volume, repository and parameters deleted |
-
 ## Security posture
 - The API has **no authentication**: approver identity is asserted by the caller (CLAUDE.md #6). It is reachable only from `allowed_cidr`. `deploy.sh` defaults that to your public IP /32. The shared tester instance is deployed with `ALLOWED_CIDR=0.0.0.0/0`, an explicit opt-in that the script warns about. On that instance anyone with the URL can start runs, approve simulated postings and, in live mode, spend the Anthropic key, so set a spend limit on the key. No tool can move real money.
 - No SSH and no key pair. IMDSv2 is required, with hop limit 1, so the container can't read instance credentials.
