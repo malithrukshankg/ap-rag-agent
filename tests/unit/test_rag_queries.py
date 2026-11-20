@@ -35,7 +35,12 @@ def test_eleven_templates() -> None:
 
 
 def test_plain_aud_po_case_runs_always_on_arms_only() -> None:
-    assert _labels(_case()) == ["C1", "C2", "C3", "C3-STATUS", "C4", "C5", "C5-LIMITS"]
+    assert _labels(_case()) == ["C1", "C2", "C3", "C3-STATUS", "C4", "C5", "C5-LIMITS", "C6"]
+
+
+def test_c6_arm_runs_without_free_text() -> None:
+    # C6 can turn applicable in DECIDE from model indicators; its policy text must be there.
+    assert "C6" in _labels(_case())
 
 
 def test_no_po_swaps_c4_for_nopo() -> None:
@@ -48,7 +53,7 @@ def test_fx_arm_only_when_currency_differs() -> None:
     assert "C4-FX" not in _labels(_case())
 
 
-def test_free_text_adds_c6_and_case_arm() -> None:
+def test_free_text_adds_case_arm_after_c6() -> None:
     labels = _labels(_case(notes="Please expedite, bank account changed"))
     assert labels[-2:] == ["C6", "CASE"]
 

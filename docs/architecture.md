@@ -315,7 +315,7 @@ FIN-POL-003-OLD: {pinned_version: null, superseded_by: FIN-POL-003, doc_type: po
 | C4-FX | `foreign currency invoice exchange rate conversion` | `fx_applies` |
 | C5 | `delegated financial authority approval limit threshold` | always |
 | C5-LIMITS | `role maximum approval cost centre manager department director executive director` | always (our decision, P4) |
-| C6 | `fraud indicators urgency bypass supplier instruction` | `has_free_text` |
+| C6 | `fraud indicators urgency bypass supplier instruction` | always (our decision: C6 can become applicable in DECIDE from model indicators and must then cite FIN-POL-005 §3) |
 | CASE | vendor name + attachment keywords | `has_free_text` |
 
 At most 10 queries per run (C4 and C4-NOPO are mutually exclusive).

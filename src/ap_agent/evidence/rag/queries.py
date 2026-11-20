@@ -65,9 +65,10 @@ TEMPLATES: tuple[QueryTemplate, ...] = (
         "role maximum approval cost centre manager department director executive director",
         lambda f: True,
     ),
-    QueryTemplate(
-        "C6", "fraud indicators urgency bypass supplier instruction", lambda f: f.has_free_text
-    ),
+    # C6 always runs (our decision): C6 can become applicable in DECIDE from verified model
+    # indicators even with no case free text, and must then find FIN-POL-005 §3 to cite its
+    # threshold. Gating this arm on has_free_text left C6 INDETERMINATE in that path.
+    QueryTemplate("C6", "fraud indicators urgency bypass supplier instruction", lambda f: True),
     QueryTemplate("CASE", "{vendor_name} {attachment_keywords}", lambda f: f.has_free_text),
 )
 
