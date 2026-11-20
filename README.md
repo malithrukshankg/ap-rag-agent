@@ -21,46 +21,139 @@ The design principle is **code decides, the model describes**. The model writes 
 
 The primary environment is **local**: the reviewer path needs no API key, no cloud account and no services. SQLite holds the index, run state and audit log; one process serves the API. A Dockerfile reproduces that in a container. An optional **AWS** deployment (EC2 + EBS + ECR, Terraform) shows how the same container is hosted, with secrets in SSM and the API restricted to one IP address. SQLite is a deliberate choice: the brief accepts simple local persistence that demonstrates restart/resume and idempotency (§8). It is also why the app runs as a single uvicorn worker (one writer).
 
-## Quick start (no key, no network)
+## Run it locally
+
+### 1. Prerequisites
+
+| Need | Version | Needed for |
+|---|---|---|
+| Python | 3.12 (pinned in `.python-version`; `uv` installs it if missing) | everything |
+| [uv](https://docs.astral.sh/uv/getting-started/installation/) | ≥ 0.5 | install, run, test |
+| make | any | optional. Each Makefile target is one `uv` line, so on Windows run the line directly. |
+| Anthropic API key | | live mode only |
+| Langfuse account and keys | | optional tracing only |
+| Docker | ≥ 24 | the container only |
+| AWS CLI v2, Terraform ≥ 1.6, bash (Git Bash on Windows) | | the AWS deployment only |
+
+### 2. Install and create `.env`
 
 ```bash
-uv sync --frozen                      # install the locked dependencies
-cp .env.example .env                  # sets AP_PAYMENT_HMAC_KEY; the app refuses to start without it
-uv run ap ingest                      # chunk and index the corpus into var/ap.db
-uv run pytest -m "not live"           # stable tier: 709 tests, about 15 s
-AP_MODEL__ADAPTER=scripted uv run uvicorn ap_agent.api.app:app --workers 1 --port 8000
+git clone <repo-url> ap-rag-agent && cd ap-rag-agent
+uv sync --frozen            # creates .venv with the exact locked versions
+cp .env.example .env        # PowerShell: Copy-Item .env.example .env
 ```
 
-Then open <http://127.0.0.1:8000/docs> (Swagger UI) or follow [Using the API](#using-the-api).
+**Secrets and per-machine settings go only in `.env`**, which is git-ignored. Never put them in `config/app.yaml`, which is committed. The app reads `.env` from the repo root at startup.
 
-## Prerequisites
+| `.env` variable | Scripted mode | Live mode | What to put there |
+|---|---|---|---|
+| `AP_PAYMENT_HMAC_KEY` | **required** | **required** | Any long random string. Locally the example value `change-me-local-only` works. Generate one with `python -c "import secrets; print(secrets.token_hex(32))"`. The app refuses to start without it. |
+| `AP_MODEL__ADAPTER` | `scripted` | `anthropic` (or leave unset: `anthropic` is the default in `config/app.yaml`) | Selects the mode; see step 3. |
+| `ANTHROPIC_API_KEY` | leave empty | **required** | A key from <https://console.anthropic.com> → *API Keys*, starting `sk-ant-`. With `anthropic` selected and no key, the app refuses to start. |
+| `AP_TRACING__ENABLED` | optional | optional | `true` to send traces to Langfuse; default `false`. Works in either mode. |
+| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | only if tracing | only if tracing | From your Langfuse project → *Settings* → *API Keys* (`pk-lf-…` and `sk-lf-…`). |
+| `AP_TRACING__HOST` | only if tracing | only if tracing | `https://cloud.langfuse.com` (EU), `https://us.cloud.langfuse.com` (US), or a self-hosted URL. |
 
-| Need | Version | For |
+A complete `.env` for **scripted mode** (no accounts needed):
+
+```dotenv
+AP_PAYMENT_HMAC_KEY=change-me-local-only
+AP_MODEL__ADAPTER=scripted
+```
+
+A complete `.env` for **live mode with tracing**:
+
+```dotenv
+AP_PAYMENT_HMAC_KEY=3f9c…a long random string…
+AP_MODEL__ADAPTER=anthropic
+ANTHROPIC_API_KEY=sk-ant-…
+AP_TRACING__ENABLED=true
+LANGFUSE_PUBLIC_KEY=pk-lf-…
+LANGFUSE_SECRET_KEY=sk-lf-…
+AP_TRACING__HOST=https://cloud.langfuse.com
+```
+
+Tracing is observe-only. SQLite stays the system of record, and a Langfuse outage cannot change or fail a run. By default no prompt text or invoice amount is sent to Langfuse; set `AP_TRACING__SEND_PROMPTS=true` to send the redacted prompt and completion text as well.
+
+### 3. Choose a mode: scripted or live
+
+The only difference between the two modes is **who writes the model's assessment** (the narrative, citations, risk flags and proposed outcome in the ASSESS step). Everything else is identical: retrieval, the simulated tools, controls C1–C6, the arithmetic, the approval gate and the database. That is deliberate. Code decides the outcome, so swapping the model must not change the controls.
+
+| | Scripted mode (offline) | Live mode |
 |---|---|---|
-| Python | 3.12 (`.python-version`; `uv` installs it if missing) | everything |
-| [uv](https://docs.astral.sh/uv/) | ≥ 0.5 | install, run, test |
-| make | any | optional: each Makefile target is one `uv` line, so on Windows copy the recipe |
-| `ANTHROPIC_API_KEY` | | only for the real model (live tier, or running with `model.adapter: anthropic`) |
-| Docker | ≥ 24 | only for the container |
-| AWS CLI v2, Terraform ≥ 1.6, bash | | only for the AWS deployment |
+| Select with | `AP_MODEL__ADAPTER=scripted` | `AP_MODEL__ADAPTER=anthropic` |
+| ASSESS step | Replays canned JSON completions stored with each case (`scripted_model` in `fixtures/cases/FIN-00x.json`, or the `simulation.scripted_model` field of a `POST /runs` request) | Calls Claude (`claude-opus-5-5`, set under `model:` in `config/app.yaml`) with the redacted evidence |
+| Needs | nothing: no key, no network, no cost | `ANTHROPIC_API_KEY`, internet access, API usage is billed |
+| Deterministic | yes: same outcome, controls and fingerprint every run | outcomes are bounded by the controls; the wording varies |
+| A request without scripted completions | the assessment is `UNAVAILABLE`, so the outcome is floored at `HOLD` | normal |
+| Used by | `pytest -m "not live"` (forces scripted whatever `.env` says), `scripts/transcripts.py`, keyless demos | `pytest -m live`, real use |
 
-## Configuration
+Fault injection (the `simulation.faults` field, used for example for FIN-004's PO timeouts) works in both modes. The simulated vendor, PO, history, FX and ledger backends are the same in both modes: "live" means a live *model*, not live finance systems.
 
-Configuration lives outside the code (§4). `config/app.yaml` holds the runtime settings. `config/policy_params.yaml` holds the policy parameters, each tagged with the corpus literal it comes from. `config/policy_registry.yaml` lists the trusted documents and their pinned versions. Any key in `app.yaml` can be overridden by an environment variable or a `.env` file: use the `AP_` prefix and a double underscore for nesting. Copy [`.env.example`](.env.example) to `.env` to start.
+To switch modes, change `AP_MODEL__ADAPTER` in `.env` and restart the server. You can also override it for a single command:
 
-| Variable | Required | Purpose |
+```bash
+AP_MODEL__ADAPTER=scripted uv run uvicorn ap_agent.api.app:app --workers 1 --port 8000   # bash
+$env:AP_MODEL__ADAPTER="scripted"; uv run uvicorn ap_agent.api.app:app --workers 1 --port 8000   # PowerShell
+```
+
+### 4. Ingest, start, try it
+
+```bash
+uv run ap ingest            # chunks and indexes fixtures/corpus into var/ap.db and prints a report
+uv run uvicorn ap_agent.api.app:app --workers 1 --host 127.0.0.1 --port 8000      # or: make run
+```
+
+- **Ingestion.** `ap ingest` is idempotent: it is a no-op while the corpus is unchanged. The server also re-indexes on startup whenever the corpus has changed.
+- **Startup.** A startup log line or error names any missing setting.
+- **Trying it.** Open <http://127.0.0.1:8000/docs> (Swagger UI) to call every endpoint from the browser, or follow [Using the API](#using-the-api) for a scripted end-to-end FIN-001 run with curl.
+- **Where things are written.** Run state, the audit log and the index go to `var/ap.db`; JSON logs go to `var/logs/ap.jsonl`. Delete `var/` to start fresh.
+
+### 5. Run the tests and the evaluation
+
+```bash
+uv run pytest -m "not live"            # stable tier: 709 tests, ~15 s, no key, no network (make test)
+uv run ruff check . && uv run mypy     # lint and strict types (make lint)
+```
+
+The **live tier** checks for the key in the *shell environment*, not in `.env`. If the key is only in `.env`, the live tests are skipped.
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-…      # PowerShell: $env:ANTHROPIC_API_KEY="sk-ant-…"
+uv run pytest -m live -v               # the five cases against Claude (make test-live)
+```
+
+The live tests assert safety rather than wording: the outcome is never more permissive than expected, every attempt was a real recorded model call, nothing posts without a grant, and no untrusted document is cited as authority.
+
+The **evaluation report** (the "list evaluation results" operation, §2) runs FIN-001…005 through the server's configured mode on a throwaway database:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/evals | jq '{passed, cases: [.cases[] | {case_id, passed}], metrics}'
+curl -s http://127.0.0.1:8000/evals/latest     # the last report
+```
+
+### 6. Or run it in Docker
+
+```bash
+docker build -t ap-rag-agent .         # the build also runs `ap ingest` and fails on a bad corpus
+docker run --rm -p 8000:8000 -v ap-data:/data --env-file .env ap-rag-agent
+```
+
+The container uses the same `.env`. Its run state and logs live in the `ap-data` volume at `/data`, so they survive container restarts.
+
+### Configuration files (reference)
+
+| File | Holds | Edit when |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | only with the anthropic adapter | Real Claude calls |
-| `AP_PAYMENT_HMAC_KEY` | yes (any random string locally) | Key for the HMAC fingerprint of vendor bank accounts |
-| `AP_MODEL__ADAPTER` | no | `anthropic` (default in `app.yaml`) or `scripted` (canned completions, no key, no network) |
-| `AP_STORAGE__SQLITE_PATH` | no | Database file; default `var/ap.db`, `/data/ap.db` in the container |
-| `AP_LOGGING__PATH` | no | JSON log file; default `var/logs/ap.jsonl` |
-| `AP_TRACING__ENABLED`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `AP_TRACING__HOST` | no | Optional Langfuse tracing, off by default |
+| `.env` | secrets and per-machine overrides (above) | always, per machine |
+| `config/app.yaml` | model id, effort and timeout; budget; tool timeouts and retries; storage and log paths; tracing defaults; escalation precedence | tuning behaviour; committed, so no secrets |
+| `config/policy_params.yaml` | the policy numbers controls use (tolerances, authority limits), each tagged with the exact corpus sentence it comes from | only when the corpus policy changes |
+| `config/policy_registry.yaml` | which corpus documents are trusted, and at which pinned version | adding or superseding a policy document |
 
-### Model
+Any `app.yaml` key can be overridden from `.env` or the environment: prefix `AP_` and use `__` for nesting. For example, `AP_MODEL__ID=…`, `AP_BUDGET__MAX_TOOL_CALLS=30` or `AP_STORAGE__SQLITE_PATH=/data/ap.db`.
 
 ```yaml
-model:
+model:                      # config/app.yaml
   adapter: anthropic        # or scripted
   id: claude-opus-5-5
   effort: medium
@@ -69,7 +162,7 @@ model:
   prompt_version: assess-v2 # recorded on every run
 ```
 
-The graph only sees the `ModelClient` protocol, and `orchestration/model_factory.py` builds the adapter from settings. With the anthropic adapter and no `ANTHROPIC_API_KEY`, the app refuses to start and says to set `AP_MODEL__ADAPTER=scripted`. Once running, a failed or malformed model call does not fail the run: after two repair attempts the assessment is marked `UNAVAILABLE` and the outcome is floored at `HOLD`.
+The graph only ever sees the `ModelClient` protocol; `orchestration/model_factory.py` builds the adapter from these settings. Once a run is under way, a failed or malformed model call does not fail it: after two repair attempts the assessment is marked `UNAVAILABLE` and the outcome is floored at `HOLD`.
 
 ## Commands
 
@@ -83,12 +176,60 @@ The graph only sees the `ModelClient` protocol, and `orchestration/model_factory
 | Lint and types | `uv run ruff check . && uv run ruff format --check . && uv run mypy` | `make lint` |
 | Evaluation report | `curl -X POST localhost:8000/evals`, then `curl localhost:8000/evals/latest` | |
 | Regenerate transcripts | `uv run python scripts/transcripts.py` | |
-| Container | `docker build -t ap-rag-agent .`, then `docker run -p 8000:8000 -v ap-data:/data -e AP_PAYMENT_HMAC_KEY=… -e AP_MODEL__ADAPTER=scripted ap-rag-agent` | `make docker-build` |
-| AWS deploy / destroy | `deploy/scripts/deploy.sh` / `deploy/scripts/destroy.sh` (see [deploy/README.md](deploy/README.md)) | |
+| Container | `docker build -t ap-rag-agent .`, then `docker run --rm -p 8000:8000 -v ap-data:/data --env-file .env ap-rag-agent` | `make docker-build` |
+| AWS deploy / destroy | `deploy/scripts/deploy.sh` / `deploy/scripts/destroy.sh` (see [Test on AWS](#test-on-aws)) | |
 
-About ingestion: the app also re-indexes on startup when the corpus hash has changed, so `ap ingest` is optional before `run`. The Docker build runs `ap ingest` against a scratch database, so a corpus that fails to ingest fails the build.
+The `POST /evals` report gives pass/fail per case plus these metrics: outcome accuracy, no POST without a grant, exactly one posting, citation validity, recall@5, superseded documents returned (must be 0), adversarial documents cited as authority (must be 0), and injection resistance.
 
-About evals: `POST /evals` runs FIN-001…005 on a fresh database (production data is untouched) with whichever adapter is configured. It reports pass/fail per case plus these metrics: outcome accuracy, no POST without a grant, exactly one posting, citation validity, recall@5, superseded documents returned (must be 0), adversarial documents cited as authority (must be 0), and injection resistance.
+## Test on AWS
+
+This is optional: it deploys the same container to one EC2 instance in your AWS account. It is real infrastructure and **costs about US$25/month while it exists**, so destroy it when you are done (step 5). [deploy/README.md](deploy/README.md) has the full detail and the security posture.
+
+**1. Prerequisites.** You need:
+- an AWS account, with an AWS CLI v2 profile allowed to create EC2, EBS, ECR, IAM roles and SSM parameters (`aws configure --profile <name>`);
+- Terraform ≥ 1.6;
+- Docker running;
+- bash (Git Bash on Windows), curl and jq;
+- optionally the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html), for a shell on the instance.
+
+**2. Secrets.** The deploy script reads secrets from your shell or from the same local `.env`:
+- `ANTHROPIC_API_KEY`, unless you deploy in scripted mode;
+- the Langfuse keys, if `AP_TRACING__ENABLED=true`.
+
+It stores them in SSM Parameter Store as encrypted SecureStrings. Terraform never sees them, and they are never written to the instance's disk. You don't set the HMAC key: it is generated once, in SSM.
+
+**3. Deploy** (from the repo root, in bash):
+
+```bash
+AWS_PROFILE=<name> deploy/scripts/deploy.sh                          # live mode (real Claude)
+AWS_PROFILE=<name> MODEL_ADAPTER=scripted deploy/scripts/deploy.sh   # scripted mode: no key, no model cost
+```
+
+Optional overrides:
+- `AWS_REGION`, default `ap-southeast-2`;
+- `ALLOWED_CIDR`, default *your current public IP*/32. The API has no authentication, so it is only ever opened to one address.
+- `TRACING_ENABLED=true|false`.
+
+The script provisions the resources, builds and pushes the image, starts the service, and waits until it answers. Re-run it to roll out a change.
+
+**4. Test the deployment:**
+
+```bash
+API=$(terraform -chdir=deploy/terraform output -raw api_url)        # http://<public-ip>:8000
+curl -s -X POST $API/evals | jq '{passed, cases: [.cases[] | {case_id, passed}]}'   # all five cases
+```
+
+- **Interactive.** Open `$API/docs` in a browser on the allowed IP. The FIN-001 walkthrough in [Using the API](#using-the-api) works unchanged with `API` set to the deployed URL.
+- **Infrastructure and logs.** Verify the instance, the encrypted data volume at `/data` and the one-IP security group with the read-only commands in [deploy/README.md](deploy/README.md#verify-the-deployed-setup-aws-cli). Read logs over SSM, with no SSH: `aws ssm start-session --target $(terraform -chdir=deploy/terraform output -raw instance_id)`, then `sudo tail -f /data/logs/ap.jsonl`.
+- **Restart/resume on real infrastructure.** Start FIN-001 so it stops at `AWAITING_APPROVAL`. Restart the service with `sudo systemctl restart ap-agent` in the SSM shell, then send the approval. The run resumes from the EBS-backed database and posts exactly once.
+
+**5. Clean up:**
+
+```bash
+AWS_PROFILE=<name> deploy/scripts/destroy.sh
+```
+
+This deletes the instance, the EBS data volume (all run state), the ECR repository and images, the IAM role and the SSM parameters. [deploy/README.md](deploy/README.md#cost-and-cleanup) lists commands to confirm nothing billable remains.
 
 ## Using the API
 
@@ -224,7 +365,16 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
 ## AI tool use, time spent, and material not authored (§7, §11)
 
 - **AI tools.** Claude Code (Claude Opus 5.5) was used throughout as a pair programmer: to transcribe the brief, draft and critique the architecture, generate code and tests against that design, and draft documentation, including this README and the design note. Commits with substantial AI contribution carry a `Co-Authored-By: Claude` trailer. Every design decision was reviewed and is recorded with its reasoning in `docs/architecture.md` and `CLAUDE.md`. **TODO (author): adjust this description to match how you actually worked.**
-- **Time spent.** **TODO (author): approximately N hours.** The git history spans 08:37–19:34 on 2026-11-20, including breaks.
+- **Time spent.** **TODO (author): approximately N hours of active work.** For reference, the git history shows the build in one day, 2026-11-20:
+
+  | Window (commit times) | Work |
+  |---|---|
+  | 08:37–11:05 | Project rules, brief transcription, architecture, project configuration |
+  | 12:34–15:22 | Implementation phases P0–P7 (core, RAG, tools, controls, model boundary, graphs, API, evals), then the Terraform deployment |
+  | 17:27–18:00 | Deploy fix, Langfuse tracing (local and AWS) |
+  | 19:31–20:04 | Fixes from live-model evals (O8, risk indicators from case text only), README |
+
+  That is about 11.5 hours from first to last commit, including breaks. Commits were made in batches, so the windows show when work was committed, not exactly when it was done. Reading the brief before the first commit is not included.
 - **Not authored by me.**
   - Open-source libraries, pinned in `uv.lock` / `requirements.lock`: Pydantic, pydantic-settings, FastAPI, uvicorn, LangGraph and langgraph-checkpoint-sqlite, the Anthropic SDK, structlog, PyYAML, httpx, Langfuse; dev tools pytest, ruff, mypy.
   - The synthetic policy corpus in `fixtures/corpus/`. **TODO (author): state its origin.**
