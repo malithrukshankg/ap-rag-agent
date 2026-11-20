@@ -29,6 +29,8 @@ class ScriptedModelClient:
             text=text,
             model_id=SCRIPTED_MODEL_ID,
             stop_reason="end_turn",
-            input_tokens=len(request.system + request.user) // 4,
-            output_tokens=len(text) // 4,
+            # No model ran, so no tokens were used. Estimates here showed up as real usage
+            # in model_calls and in tracing.
+            input_tokens=0,
+            output_tokens=0,
         )
