@@ -394,7 +394,7 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
 ## AI tool use, time spent, and material not authored (§7, §11)
 
 - **AI tools.** Claude Code (Claude Opus 5.5) was used throughout as a pair programmer: to transcribe the brief, draft and critique the architecture, generate code and tests against that design, and draft documentation, including this README and the design note. Commits with substantial AI contribution carry a `Co-Authored-By: Claude` trailer. Every design decision was reviewed and is recorded with its reasoning in `docs/architecture.md` and `CLAUDE.md`. **TODO (author): adjust this description to match how you actually worked.**
-- **Time spent.** **TODO (author): approximately N hours of active work.** For reference, the git history shows the build in one day, 2026-11-20:
+- **Time spent.** **About 6 hours of active work**, not counting the time spent writing the final submission documents (README, design note, controls document, diagram and transcripts). The git history shows the work in one day, 2026-11-20:
 
   | Window (commit times) | Work |
   |---|---|
@@ -403,7 +403,7 @@ Ambiguities in the brief are resolved in [CLAUDE.md](CLAUDE.md#resolved-ambiguit
   | 17:27–18:00 | Deploy fix, Langfuse tracing (local and AWS) |
   | 19:31–20:04 | Fixes from live-model evals (O8, risk indicators from case text only), README |
 
-  That is about 11.5 hours from first to last commit, including breaks. Commits were made in batches, so the windows show when work was committed, not exactly when it was done. Reading the brief before the first commit is not included.
+  That span is about 11.5 hours from first to last commit, including breaks between the windows. Commits were made in batches, so the windows show when work was committed, not exactly when it was done.
 - **Not authored by me.**
   - Open-source libraries, pinned in `uv.lock` / `requirements.lock`: Pydantic, pydantic-settings, FastAPI, uvicorn, LangGraph and langgraph-checkpoint-sqlite, the Anthropic SDK, structlog, PyYAML, httpx, Langfuse; dev tools pytest, ruff, mypy.
   - The synthetic policy corpus in `fixtures/corpus/`. **TODO (author): state its origin.**
